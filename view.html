@@ -459,11 +459,7 @@
 
                 if(admin){
                     currentUser=admin.username;
-                    if(document.getElementById('rememberMe').checked){
-                        localStorage.setItem('vh_subadmin',JSON.stringify({username:username,password:password}));
-                    } else {
-                        localStorage.removeItem('vh_subadmin');
-                    }
+                    localStorage.setItem('vh_subadmin',JSON.stringify({username:username,password:password}));
                     unlock();
                 }else{
                     localStorage.removeItem('vh_subadmin');
