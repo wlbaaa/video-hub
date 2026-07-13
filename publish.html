@@ -193,10 +193,55 @@ document.addEventListener('DOMContentLoaded',function(){
 function onFile(file){
     if(!file)return;
     if(!/^video\//.test(file.type)){showToast('请选择视频文件');return}
-    if(file.size>100*1024*1024){showToast('视频不能超过 100MB');return}
+    if(file.size>500*1024*1024){showToast('视频不能超过 500MB');return}
     selectedFile=file;
-    document.getElementById('fileName').textContent='已选择：'+file.name+' ('+formatSize(file.size)+')';
+    var hint='已选择：'+file.name+' ('+formatSize(file.size)+')';
+    if(file.size>45*1024*1024){hint+=' — 超过45MB将自动压缩'}
+    document.getElementById('fileName').textContent=hint;
     document.getElementById('publishBtn').disabled=false;
+}
+
+// ────── Video Compression ──────
+async function compressVideo(file,targetMB){
+    return new Promise(function(resolve,reject){
+        var video=document.createElement('video');
+        var url=URL.createObjectURL(file);
+        video.muted=true;video.playsInline=true;video.preload='metadata';
+        video.onloadedmetadata=function(){
+            var w=Math.min(video.videoWidth,960);
+            var h=Math.round(w*(video.videoHeight/video.videoWidth));
+            h=h%2?h+1:h;w=w%2?w+1:w;
+            var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+            var ctx=canvas.getContext('2d');
+            var stream=canvas.captureStream(25);
+            var bitrate=Math.max(500000,Math.floor(targetMB*1024*1024*8/(video.duration||30)));
+            var mime='video/webm;codecs=vp8';
+            if(!MediaRecorder.isTypeSupported(mime))mime='video/webm';
+            var recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:bitrate});
+            var chunks=[];
+            recorder.ondataavailable=function(e){chunks.push(e.data)};
+            recorder.onstop=function(){
+                URL.revokeObjectURL(url);
+                var blob=new Blob(chunks,{type:'video/webm'});
+                var compressed=new File([blob],file.name.replace(/\.[^.]+$/,'.webm'),{type:'video/webm'});
+                resolve(compressed);
+            };
+            video.onended=function(){recorder.stop()};
+            video.ontimeupdate=function(){
+                if(video.currentTime>=video.duration-0.1){recorder.stop();video.pause()}
+            };
+            video.onerror=function(){URL.revokeObjectURL(url);reject(new Error('视频解码失败'))};
+            recorder.start(500);
+            video.play();
+            function drawFrame(){
+                if(video.paused||video.ended)return;
+                ctx.drawImage(video,0,0,w,h);
+                requestAnimationFrame(drawFrame);
+            }
+            video.addEventListener('playing',drawFrame);
+        };
+        video.src=url;video.load();
+    });
 }
 
 // ────── Publish ──────
@@ -211,12 +256,31 @@ async function doPublish(){
     btn.textContent='处理中...';
     document.getElementById('uploadBar').style.display='block';
     document.getElementById('uploadStatus').style.display='block';
-    document.getElementById('uploadStatus').textContent='编码中... ('+formatSize(selectedFile.size)+')';
-    document.getElementById('barFill').style.width='20%';
+
+    let fileToUpload=selectedFile;
+    // Auto-compress if > 45MB
+    if(selectedFile.size>45*1024*1024){
+        document.getElementById('uploadStatus').textContent='压缩中...';
+        document.getElementById('barFill').style.width='10%';
+        try{
+            // Allow 1 second for UI update
+            await new Promise(function(r){setTimeout(r,100)});
+            fileToUpload=await compressVideo(selectedFile,40);
+            document.getElementById('barFill').style.width='40%';
+            document.getElementById('uploadStatus').textContent='压缩完成：'+formatSize(selectedFile.size)+' → '+formatSize(fileToUpload.size);
+            await new Promise(function(r){setTimeout(r,800)});
+        }catch(e){
+            document.getElementById('uploadStatus').textContent='压缩失败，尝试直接上传...';
+            fileToUpload=selectedFile;
+        }
+    }
+
+    document.getElementById('uploadStatus').textContent='编码中... ('+formatSize(fileToUpload.size)+')';
+    document.getElementById('barFill').style.width='50%';
     const reader=new FileReader();
     reader.onprogress=function(e){
         if(e.lengthComputable){
-            document.getElementById('barFill').style.width=Math.min(90,20+(e.loaded/e.total)*70)+'%';
+            document.getElementById('barFill').style.width=Math.min(90,50+(e.loaded/e.total)*40)+'%';
         }
     };
     reader.onload=async function(){
@@ -226,14 +290,14 @@ async function doPublish(){
             const base64=reader.result.split(',')[1];
             const timestamp=new Date().toISOString();
             const videoId='v_'+Date.now();
-            const ext=selectedFile.name.split('.').pop()||'mp4';
-            const shaVal=await sha256(selectedFile.name+timestamp);
+            const ext=fileToUpload.name.split('.').pop()||'mp4';
+            const shaVal=await sha256(fileToUpload.name+timestamp);
             const newVideo={
                 id:videoId,
                 title:title,
                 description:desc,
-                filename:selectedFile.name,
-                size:selectedFile.size,
+                filename:fileToUpload.name,
+                size:fileToUpload.size,
                 uploaded_by:currentUser,
                 sha:shaVal.substring(0,16),
                 created_at:timestamp,
@@ -279,7 +343,7 @@ async function doPublish(){
             btn.disabled=false;
         }
     };
-    reader.readAsDataURL(selectedFile);
+    reader.readAsDataURL(fileToUpload);
 }
 
 // ────── GitHub API ──────
