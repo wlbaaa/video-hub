@@ -206,39 +206,55 @@ async function compressVideo(file,targetMB){
     return new Promise(function(resolve,reject){
         var video=document.createElement('video');
         var url=URL.createObjectURL(file);
-        video.muted=true;video.playsInline=true;video.preload='metadata';
+        video.muted=true;video.playsInline=true;video.preload='auto';
+        var duration=30;
+        var started=false;
+        var timeout=null;
         video.onloadedmetadata=function(){
+            duration=video.duration||30;
             var w=Math.min(video.videoWidth,960);
             var h=Math.round(w*(video.videoHeight/video.videoWidth));
             h=h%2?h+1:h;w=w%2?w+1:w;
             var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
             var ctx=canvas.getContext('2d');
             var stream=canvas.captureStream(25);
-            var bitrate=Math.max(500000,Math.floor(targetMB*1024*1024*8/(video.duration||30)));
+            var bitrate=Math.max(500000,Math.floor(targetMB*1024*1024*8/duration));
             var mime='video/webm;codecs=vp8';
             if(!MediaRecorder.isTypeSupported(mime))mime='video/webm';
             var recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:bitrate});
             var chunks=[];
             recorder.ondataavailable=function(e){chunks.push(e.data)};
             recorder.onstop=function(){
+                clearTimeout(timeout);
                 URL.revokeObjectURL(url);
                 var blob=new Blob(chunks,{type:'video/webm'});
                 var compressed=new File([blob],file.name.replace(/\.[^.]+$/,'.webm'),{type:'video/webm'});
                 resolve(compressed);
             };
-            video.onended=function(){recorder.stop()};
-            video.ontimeupdate=function(){
-                if(video.currentTime>=video.duration-0.1){recorder.stop();video.pause()}
-            };
-            video.onerror=function(){URL.revokeObjectURL(url);reject(new Error('视频解码失败'))};
-            recorder.start(500);
-            video.play();
-            function drawFrame(){
-                if(video.paused||video.ended)return;
-                ctx.drawImage(video,0,0,w,h);
-                requestAnimationFrame(drawFrame);
+            function stopRecorder(){
+                if(recorder.state==='recording'){
+                    try{recorder.stop()}catch(e){}
+                }
             }
-            video.addEventListener('playing',drawFrame);
+            // Safety timeout: max duration + 10s
+            timeout=setTimeout(stopRecorder,(duration+10)*1000);
+            video.onended=stopRecorder;
+            video.onerror=function(){clearTimeout(timeout);URL.revokeObjectURL(url);reject(new Error('视频解码失败'))};
+            recorder.start(500);
+            video.play().then(function(){
+                started=true;
+                function drawFrame(){
+                    if(video.paused||video.ended){stopRecorder();return}
+                    if(video.currentTime>=duration-0.1){stopRecorder();return}
+                    ctx.drawImage(video,0,0,w,h);
+                    requestAnimationFrame(drawFrame);
+                }
+                drawFrame();
+            }).catch(function(e){
+                clearTimeout(timeout);
+                URL.revokeObjectURL(url);
+                reject(new Error('播放失败'));
+            });
         };
         video.src=url;video.load();
     });
