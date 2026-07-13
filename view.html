@@ -66,25 +66,38 @@
             padding: 0 1.5rem;
         }
 
-        .key-panel {
+        .key-modal-overlay {
+            display: flex;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .key-modal-overlay.hidden {
+            display: none !important;
+        }
+
+        .key-modal {
             background: #1a1a2e;
             border-radius: 16px;
             padding: 2rem;
-            margin-bottom: 2rem;
             border: 1px solid #2a2a4a;
             text-align: center;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
+            max-width: 360px;
+            width: 100%;
         }
 
-        .key-panel h3 {
+        .key-modal h3 {
             margin-bottom: 1.5rem;
-            color: #a0a0c0;
-            font-size: 1rem;
+            color: #e0e0e0;
+            font-size: 1.1rem;
         }
 
-        .key-panel input {
+        .key-modal input {
             width: 100%;
             background: #0f0f1a;
             border: 1px solid #2a2a4a;
@@ -99,7 +112,7 @@
             margin-bottom: 1rem;
         }
 
-        .key-panel input:focus {
+        .key-modal input:focus {
             border-color: #667eea;
         }
 
@@ -475,12 +488,6 @@
     </div>
 
     <div class="container" id="mainContainer">
-        <div class="key-panel" id="keyPanel">
-            <h3>🔐 请输入访问密钥</h3>
-            <input type="password" id="accessKey" placeholder="访问密钥" onkeydown="if(event.key==='Enter')checkKey()">
-            <button class="btn btn-primary" onclick="checkKey()">进入</button>
-        </div>
-
         <div class="search-bar content-locked">
             <input type="text" id="searchInput" placeholder="搜索视频..." oninput="filterVideos()">
         </div>
@@ -491,6 +498,15 @@
                 <h3>暂无视频</h3>
                 <p>连接 GitHub 仓库后，上传的视频将显示在这里</p>
             </div>
+        </div>
+    </div>
+
+    <!-- Key Modal -->
+    <div class="key-modal-overlay" id="keyModal">
+        <div class="key-modal">
+            <h3>🔐 请输入访问密钥</h3>
+            <input type="password" id="accessKey" placeholder="访问密钥" onkeydown="if(event.key==='Enter')checkKey()">
+            <button class="btn btn-primary" onclick="checkKey()">进入</button>
         </div>
     </div>
 
@@ -536,7 +552,7 @@
         }
 
         function unlock() {
-            document.getElementById('keyPanel').style.display = 'none';
+            document.getElementById('keyModal').classList.add('hidden');
             document.getElementById('mainContainer').classList.add('content-unlocked');
             validateToken();
         }
