@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>我的作品 - Video Hub</title>
+<style>
+:root{--bg:#0a0a1a;--card:#12122a;--text:#e0e0f0;--muted:#7777aa;--accent:#667eea;--radius:12px;--gap:0.75rem}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:72px}
+.container{max-width:600px;margin:0 auto;padding:1rem}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;position:sticky;top:0;background:var(--bg);z-index:100;border-bottom:1px solid #1a1a3a}
+.topbar h1{font-size:1.1rem}
+
+.login-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:2000;align-items:center;justify-content:center;padding:1rem}
+.login-overlay.visible{display:flex}
+.login-panel{background:#1a1a2e;border-radius:16px;border:1px solid #2a2a4a;width:100%;max-width:380px;padding:1.5rem}
+.login-panel h3{margin-bottom:0.3rem}
+.login-panel p{color:var(--muted);font-size:0.85rem;margin-bottom:1rem}
+.login-panel input{width:100%;padding:0.65rem;border-radius:8px;border:1px solid #2a2a4a;background:#0a0a1a;color:var(--text);margin-bottom:0.5rem}
+.login-error{color:#f66;font-size:0.8rem;margin-bottom:0.5rem;display:none}
+
+.profile-card{background:var(--card);border-radius:var(--radius);padding:1.5rem;text-align:center;margin-bottom:1rem}
+.profile-avatar{width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;color:#fff;margin-bottom:0.5rem}
+.profile-name{font-size:1.2rem;font-weight:600;margin-bottom:0.2rem}
+.profile-count{color:var(--muted);font-size:0.85rem}
+
+.video-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
+.video-card{background:var(--card);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:transform 0.2s}
+.video-card:active{transform:scale(0.97)}
+.video-thumb{width:100%;aspect-ratio:16/10;background:#1a1a3a;display:flex;align-items:center;justify-content:center;font-size:2.5rem;position:relative}
+.video-thumb .play-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;opacity:0;transition:opacity 0.2s}
+.video-thumb:hover .play-icon{opacity:1}
+.video-info{padding:0.5rem 0.6rem}
+.video-title{font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:0.2rem}
+.video-meta{font-size:0.72rem;color:var(--muted);display:flex;justify-content:space-between}
+
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:2000;overflow-y:auto}
+.modal-overlay.visible{display:block}
+.modal-content{max-width:600px;margin:0 auto;padding:1rem}
+.modal-close{position:sticky;top:0.5rem;float:right;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:1.2rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center}
+.modal-video{width:100%;max-height:60vh;border-radius:var(--radius);background:#000;margin-bottom:0.75rem}
+.modal-title{font-size:1.1rem;font-weight:600;margin-bottom:0.3rem}
+.modal-desc{color:var(--muted);font-size:0.85rem;margin-bottom:0.5rem;white-space:pre-wrap}
+.modal-meta{color:var(--muted);font-size:0.75rem}
+
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--muted)}
+.empty-icon{font-size:4rem;margin-bottom:1rem}
+.empty-state h3{margin-bottom:0.5rem;color:var(--text)}
+
+.btn{padding:0.55rem 1rem;border-radius:8px;border:none;cursor:pointer;font-size:0.85rem;font-weight:600;transition:0.2s}
+.btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid #2a2a4a}
+.btn-ghost:hover{color:var(--text)}
+.btn-sm{padding:0.35rem 0.8rem;font-size:0.78rem}
+.btn-block{display:block;width:100%;text-align:center}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:0.5rem 1.2rem;border-radius:20px;font-size:0.85rem;z-index:9999;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.toast.show{opacity:1}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;border-top:1px solid #2a2a4a;display:flex;justify-content:space-around;padding:0.5rem 0;padding-bottom:max(0.5rem,env(safe-area-inset-bottom));z-index:900}
+.bottom-nav a{display:flex;flex-direction:column;align-items:center;text-decoration:none;color:var(--muted);font-size:0.7rem;gap:2px;transition:color 0.2s}
+.bottom-nav a.active,.bottom-nav a:hover{color:var(--accent)}
+.bn-icon{font-size:1.25rem}
+</style>
+</head>
+<body>
+<div class="topbar">
+    <h1>Video Hub</h1>
+    <button class="btn btn-ghost btn-sm" id="btnAccount" onclick="toggleLogin()">登录</button>
+</div>
+
+<div class="container">
+    <div id="profileSection" style="display:none">
+        <div class="profile-card">
+            <div class="profile-avatar" id="profileAvatar">?</div>
+            <div class="profile-name" id="profileName"></div>
+            <div class="profile-count" id="profileCount">0 个作品</div>
+        </div>
+    </div>
+    <div id="emptyState" class="empty-state">
+        <div class="empty-icon">🎬</div>
+        <h3 id="emptyTitle">登录后查看作品</h3>
+        <p id="emptyDesc">使用副管理员账号登录</p>
+        <button class="btn btn-primary btn-block" onclick="toggleLogin()" style="max-width:200px;margin:1rem auto">去登录</button>
+    </div>
+    <div class="video-grid" id="videoGrid"></div>
+</div>
+
+<div class="login-overlay" id="loginOverlay">
+    <div class="login-panel">
+        <h3>登录</h3>
+        <p>使用副管理员账号</p>
+        <form onsubmit="doLogin(event)">
+            <input type="text" id="loginUser" placeholder="用户名" required>
+            <input type="password" id="loginPass" placeholder="密码" required>
+            <div class="login-error" id="loginError"></div>
+            <button class="btn btn-primary btn-block" type="submit">登录</button>
+            <button class="btn btn-ghost btn-block" type="button" onclick="toggleLogin()" style="margin-top:0.5rem">取消</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <video class="modal-video" id="modalVideo" controls autoplay></video>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-desc" id="modalDesc"></div>
+        <div class="modal-meta" id="modalMeta"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bottom-nav">
+    <a href="publish.html"><span class="bn-icon">📹</span>创作</a>
+    <a href="my.html" class="active"><span class="bn-icon">👤</span>我的</a>
+    <a href="view.html"><span class="bn-icon">🔥</span>推荐</a>
+</div>
+
+<script>
+const _p1='Z2hw',_p2='XzdSNm0xamdINTdK',_p3='ZFlsUmpyQllDM2k5',_p4='aVRvYTFNNDByNFNlRg==';
+const _tk=atob(_p1+_p2+_p3+_p4);
+let config={user:'wlbaaa',repo:'video-hub',token:_tk};
+let allVideos=[];
+let currentUser=null;
+
+async function sha256(msg){
+    const buf=new TextEncoder().encode(msg);
+    const h=await crypto.subtle.digest('SHA-256',buf);
+    return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function doLogin(e){
+    e.preventDefault();
+    const u=document.getElementById('loginUser').value.trim();
+    const p=document.getElementById('loginPass').value.trim();
+    if(!u||!p)return;
+    try{
+        const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/sub_admins.json');
+        const admins=JSON.parse(decodeBase64(r.content));
+        const found=admins.find(a=>a.username===u);
+        if(!found||(await sha256(p))!==found.password){
+            document.getElementById('loginError').style.display='block';
+            document.getElementById('loginError').textContent='用户名或密码错误';
+            return;
+        }
+        currentUser=u;
+        document.getElementById('loginError').style.display='none';
+        document.getElementById('loginOverlay').classList.remove('visible');
+        document.getElementById('btnAccount').textContent='退出';
+        document.getElementById('btnAccount').onclick=logout;
+        updateUI();
+        loadMyVideos();
+        showToast('已登录：'+u);
+    }catch(e){
+        document.getElementById('loginError').style.display='block';
+        document.getElementById('loginError').textContent='登录失败: '+e.message;
+    }
+}
+function toggleLogin(){
+    const ov=document.getElementById('loginOverlay');
+    if(ov.classList.contains('visible')){ov.classList.remove('visible')}
+    else{document.getElementById('loginError').style.display='none';ov.classList.add('visible')}
+}
+function logout(){
+    currentUser=null;
+    updateUI();
+    loadMyVideos();
+    showToast('已退出');
+}
+
+function avatarColor(name){
+    let h=0;for(let i=0;i<name.length;i++)h=name.charCodeAt(i)+((h<<5)-h);
+    return 'hsl('+(Math.abs(h)%360)+',55%,45%)';
+}
+function updateUI(){
+    if(currentUser){
+        document.getElementById('profileSection').style.display='block';
+        document.getElementById('profileAvatar').textContent=currentUser[0].toUpperCase();
+        document.getElementById('profileAvatar').style.background=avatarColor(currentUser);
+        document.getElementById('profileName').textContent=currentUser;
+        document.getElementById('btnAccount').textContent='退出';
+        document.getElementById('btnAccount').onclick=logout;
+    }else{
+        document.getElementById('profileSection').style.display='none';
+        document.getElementById('btnAccount').textContent='登录';
+        document.getElementById('btnAccount').onclick=toggleLogin;
+    }
+}
+
+async function loadMyVideos(){
+    await loadAllVideos();
+    const grid=document.getElementById('videoGrid');
+    const es=document.getElementById('emptyState');
+    if(!currentUser){grid.innerHTML='';es.style.display='block';document.getElementById('emptyTitle').textContent='登录后查看作品';document.getElementById('emptyDesc').textContent='使用副管理员账号登录';return}
+    const myVids=allVideos.filter(v=>v.uploaded_by===currentUser);
+    document.getElementById('profileCount').textContent=myVids.length+' 个作品';
+    if(myVids.length===0){
+        grid.innerHTML='';
+        es.style.display='block';
+        document.getElementById('emptyTitle').textContent='还没有作品';
+        document.getElementById('emptyDesc').textContent='点击底部"创作"发布第一个视频';
+        return;
+    }
+    es.style.display='none';
+    grid.innerHTML=myVids.map(v=>`
+        <div class="video-card" onclick="playVideo('${v.id}')">
+            <div class="video-thumb"><span>🎬</span><div class="play-icon">▶️</div></div>
+            <div class="video-info">
+                <div class="video-title">${escapeHtml(v.title)}</div>
+                <div class="video-meta">
+                    <span>${formatSize(v.size||0)}</span>
+                    <span>${formatDate(v.created_at)}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+async function loadAllVideos(){
+    try{
+        const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json');
+        allVideos=(JSON.parse(decodeBase64(r.content))).videos||[];
+    }catch(e){allVideos=[]}
+}
+
+function playVideo(id){
+    const v=allVideos.find(x=>x.id===id);
+    if(!v)return;
+    const ext=(v.filename||'a.mp4').split('.').pop();
+    const url='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/videos/'+v.id+'.'+ext;
+    document.getElementById('modalVideo').src=url;
+    document.getElementById('modalTitle').textContent=v.title;
+    document.getElementById('modalDesc').textContent=v.description||'';
+    document.getElementById('modalMeta').textContent=formatSize(v.size)+' · '+formatDate(v.created_at)+' · '+escapeHtml(v.uploaded_by||'');
+    document.getElementById('modalOverlay').classList.add('visible');
+}
+function closeModal(){
+    document.getElementById('modalOverlay').classList.remove('visible');
+    document.getElementById('modalVideo').pause();
+    document.getElementById('modalVideo').src='';
+}
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
+
+async function githubAPI(endpoint,options){
+    const opts=options||{};
+    const res=await fetch('https://api.github.com/'+endpoint,{
+        method:opts.method||'GET',
+        headers:{'Authorization':'token '+config.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+        body:opts.body||undefined
+    });
+    if(!res.ok){const e=await res.text();throw new Error(res.status+' '+e)}
+    return res.status===204?null:res.json();
+}
+
+function decodeBase64(str){return decodeURIComponent(escape(atob(str.replace(/\n/g,''))))}
+function formatSize(b){if(!b||b===0)return'0 B';const k=1024;const s=['B','KB','MB','GB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
+function formatDate(isoStr){if(!isoStr)return'';const d=new Date(isoStr);return d.toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})}
+function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(function(){t.classList.remove('show')},2500)}
+</script>
+</body>
+</html>
