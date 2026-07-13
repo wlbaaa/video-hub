@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频上传</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 1.2rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a2a4a;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-links a {
+            color: #a0a0c0;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .nav-links a.active {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .config-panel {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #2a2a4a;
+        }
+
+        .config-panel h3 {
+            margin-bottom: 1rem;
+            color: #a0a0c0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .config-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: #8888aa;
+        }
+
+        .input-group input {
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #667eea;
+        }
+
+        .input-group input::placeholder {
+            color: #444466;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #2a2a4a;
+            color: #a0a0c0;
+        }
+
+        .btn-secondary:hover {
+            background: #3a3a5a;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
+
+        .status-badge.connected {
+            background: rgba(46, 213, 115, 0.15);
+            color: #2ed573;
+        }
+
+        .status-badge.disconnected {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .upload-area {
+            background: #1a1a2e;
+            border: 2px dashed #2a2a4a;
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 2rem;
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-area h2 {
+            margin-bottom: 0.5rem;
+            color: #e0e0e0;
+        }
+
+        .upload-area p {
+            color: #6666888;
+            font-size: 0.9rem;
+        }
+
+        .upload-form {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #2a2a4a;
+            display: none;
+        }
+
+        .upload-form.visible {
+            display: block;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #0f0f1a;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .file-icon {
+            font-size: 2rem;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .file-size {
+            color: #6666888;
+            font-size: 0.85rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #8888aa;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #0f0f1a;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .progress-bar.visible {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 3px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #8888aa;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .progress-text.visible {
+            display: block;
+        }
+
+        .upload-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .video-list {
+            margin-top: 2rem;
+        }
+
+        .video-list h3 {
+            margin-bottom: 1rem;
+            color: #a0a0c0;
+        }
+
+        .video-item {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #2a2a4a;
+            transition: all 0.3s;
+        }
+
+        .video-item:hover {
+            border-color: #3a3a5a;
+        }
+
+        .video-item-info {
+            flex: 1;
+        }
+
+        .video-item-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .video-item-meta {
+            color: #6666888;
+            font-size: 0.8rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-color: #2ed573;
+        }
+
+        .toast.error {
+            border-color: #e74c3c;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #6666888;
+        }
+
+        @media (max-width: 600px) {
+            .config-row {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                padding: 1rem;
+            }
+            .container {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📹 视频上传端</h1>
+        <div class="nav-links">
+            <a href="upload.html" class="active">上传</a>
+            <a href="view.html">观看</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="config-panel">
+            <h3>
+                GitHub 配置
+                <span id="statusBadge" class="status-badge disconnected">
+                    <span class="status-dot"></span>
+                    <span id="statusText">未连接</span>
+                </span>
+            </h3>
+            <div class="config-row">
+                <div class="input-group">
+                    <label>GitHub 用户名</label>
+                    <input type="text" id="githubUser" placeholder="your-username">
+                </div>
+                <div class="input-group">
+                    <label>仓库名称</label>
+                    <input type="text" id="githubRepo" placeholder="my-videos">
+                </div>
+            </div>
+            <div class="input-group" style="margin-bottom: 1rem;">
+                <label>Personal Access Token</label>
+                <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx">
+            </div>
+            <button class="btn btn-primary" onclick="validateToken()">连接验证</button>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <h2>拖拽视频文件到这里</h2>
+            <p>或点击选择文件（支持 MP4, WebM, MOV, AVI，最大 100MB）</p>
+            <input type="file" id="fileInput" accept="video/*" style="display: none;">
+        </div>
+
+        <div class="upload-form" id="uploadForm">
+            <div class="file-info">
+                <span class="file-icon">🎬</span>
+                <div class="file-details">
+                    <div class="file-name" id="fileName">-</div>
+                    <div class="file-size" id="fileSize">-</div>
+                </div>
+                <button class="btn btn-secondary" onclick="cancelSelection()">取消</button>
+            </div>
+            <div class="form-group">
+                <label>视频标题</label>
+                <input type="text" id="videoTitle" placeholder="给视频起个名字">
+            </div>
+            <div class="form-group">
+                <label>视频描述（可选）</label>
+                <textarea id="videoDesc" placeholder="简单描述一下这个视频..."></textarea>
+            </div>
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">准备上传...</div>
+            <div class="upload-actions">
+                <button class="btn btn-primary" id="uploadBtn" onclick="startUpload()">开始上传</button>
+                <button class="btn btn-secondary" onclick="cancelSelection()">取消</button>
+            </div>
+        </div>
+
+        <div class="video-list" id="videoList">
+            <h3>已上传的视频</h3>
+            <div id="videoListContent">
+                <div class="empty-state">连接 GitHub 后查看已上传的视频</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let selectedFile = null;
+        let config = { user: '', repo: '', token: '' };
+
+        // Load saved config
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('videoHubConfig');
+            if (saved) {
+                config = JSON.parse(saved);
+                document.getElementById('githubUser').value = config.user || '';
+                document.getElementById('githubRepo').value = config.repo || '';
+                document.getElementById('githubToken').value = config.token || '';
+                if (config.token && config.user && config.repo) {
+                    validateToken();
+                }
+            }
+        });
+
+        // Drag & Drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFile(files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('video/')) {
+                showToast('请选择视频文件', 'error');
+                return;
+            }
+            if (file.size > 100 * 1024 * 1024) {
+                showToast('文件大小不能超过 100MB（GitHub API 限制）', 'error');
+                return;
+            }
+            if (!config.token) {
+                showToast('请先配置并连接 GitHub', 'error');
+                return;
+            }
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatSize(file.size);
+            document.getElementById('videoTitle').value = file.name.replace(/\.[^/.]+$/, '');
+            document.getElementById('uploadForm').classList.add('visible');
+        }
+
+        function cancelSelection() {
+            selectedFile = null;
+            fileInput.value = '';
+            document.getElementById('uploadForm').classList.remove('visible');
+            document.getElementById('progressBar').classList.remove('visible');
+            document.getElementById('progressText').classList.remove('visible');
+        }
+
+        async function startUpload() {
+            if (!selectedFile) return;
+
+            const title = document.getElementById('videoTitle').value.trim();
+            const desc = document.getElementById('videoDesc').value.trim();
+
+            if (!title) {
+                showToast('请输入视频标题', 'error');
+                return;
+            }
+
+            const uploadBtn = document.getElementById('uploadBtn');
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+
+            uploadBtn.disabled = true;
+            progressBar.classList.add('visible');
+            progressText.classList.add('visible');
+            progressText.textContent = '正在读取文件...';
+            progressFill.style.width = '10%';
+
+            try {
+                // Read file as base64
+                const reader = new FileReader();
+                const base64Promise = new Promise((resolve, reject) => {
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                });
+                reader.readAsDataURL(selectedFile);
+                const base64Content = await base64Promise;
+
+                progressFill.style.width = '40%';
+                progressText.textContent = '正在上传视频文件...';
+
+                // Upload video file
+                const safeFileName = selectedFile.name.replace(/[^a-zA-Z0-9._\-\u4e00-\u9fff]/g, '_');
+                const videoPath = `videos/${Date.now()}_${safeFileName}`;
+
+                await githubAPI(`/repos/${config.user}/${config.repo}/contents/${videoPath}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        message: `Upload video: ${title}`,
+                        content: base64Content
+                    })
+                });
+
+                progressFill.style.width = '70%';
+                progressText.textContent = '正在更新视频列表...';
+
+                // Update videos.json
+                let videos = [];
+                try {
+                    const data = await githubAPI(`/repos/${config.user}/${config.repo}/contents/videos.json`);
+                    const json = decodeBase64(data.content);
+                    videos = JSON.parse(json);
+                } catch (e) {
+                    // videos.json doesn't exist yet
+                }
+
+                const videoEntry = {
+                    id: Date.now().toString(),
+                    title: title,
+                    description: desc,
+                    path: videoPath,
+                    fileName: selectedFile.name,
+                    size: selectedFile.size,
+                    uploadDate: new Date().toISOString()
+                };
+
+                videos.unshift(videoEntry);
+
+                const videosJson = btoa(unescape(encodeURIComponent(JSON.stringify(videos, null, 2))));
+
+                // Check if videos.json exists to get SHA
+                let sha = null;
+                try {
+                    const existing = await githubAPI(`/repos/${config.user}/${config.repo}/contents/videos.json`);
+                    sha = existing.sha;
+                } catch (e) {}
+
+                const body = {
+                    message: `Add video: ${title}`,
+                    content: videosJson
+                };
+                if (sha) body.sha = sha;
+
+                await githubAPI(`/repos/${config.user}/${config.repo}/contents/videos.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify(body)
+                });
+
+                progressFill.style.width = '100%';
+                progressText.textContent = '上传完成！';
+                showToast('视频上传成功！', 'success');
+
+                // Reset
+                setTimeout(() => {
+                    cancelSelection();
+                    document.getElementById('videoDesc').value = '';
+                    refreshVideoList();
+                }, 1500);
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                progressText.textContent = '上传失败';
+                showToast('上传失败: ' + error.message, 'error');
+                uploadBtn.disabled = false;
+            }
+        }
+
+        async function githubAPI(endpoint, options = {}) {
+            const url = `https://api.github.com${endpoint}`;
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Authorization': `token ${config.token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {})
+                }
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP ${response.status}`);
+            }
+            return response.json();
+        }
+
+        async function getVideos() {
+            try {
+                const data = await githubAPI(`/repos/${config.user}/${config.repo}/contents/videos.json`);
+                const json = decodeBase64(data.content);
+                return JSON.parse(json);
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function decodeBase64(str) {
+            return decodeURIComponent(escape(atob(str.replace(/\n/g, ''))));
+        }
+
+        async function validateToken() {
+            const user = document.getElementById('githubUser').value.trim();
+            const repo = document.getElementById('githubRepo').value.trim();
+            const token = document.getElementById('githubToken').value.trim();
+
+            if (!user || !repo || !token) {
+                showToast('请填写所有配置项', 'error');
+                return;
+            }
+
+            config = { user, repo, token };
+
+            try {
+                await githubAPI(`/repos/${user}/${repo}`);
+                document.getElementById('statusBadge').className = 'status-badge connected';
+                document.getElementById('statusText').textContent = '已连接';
+                localStorage.setItem('videoHubConfig', JSON.stringify(config));
+                showToast('连接成功！', 'success');
+                refreshVideoList();
+            } catch (error) {
+                document.getElementById('statusBadge').className = 'status-badge disconnected';
+                document.getElementById('statusText').textContent = '连接失败';
+                showToast('连接失败: ' + error.message, 'error');
+            }
+        }
+
+        async function refreshVideoList() {
+            const content = document.getElementById('videoListContent');
+            try {
+                const videos = await getVideos();
+                if (videos.length === 0) {
+                    content.innerHTML = '<div class="empty-state">还没有上传任何视频</div>';
+                    return;
+                }
+                content.innerHTML = videos.map(v => `
+                    <div class="video-item">
+                        <div class="video-item-info">
+                            <div class="video-item-title">${escapeHtml(v.title)}</div>
+                            <div class="video-item-meta">
+                                ${formatSize(v.size)} · ${new Date(v.uploadDate).toLocaleString('zh-CN')}
+                            </div>
+                        </div>
+                        <button class="btn btn-danger" onclick="deleteVideo('${v.id}')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">删除</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                content.innerHTML = '<div class="empty-state">加载失败，请检查配置</div>';
+            }
+        }
+
+        async function deleteVideo(id) {
+            if (!confirm('确定要删除这个视频吗？')) return;
+
+            try {
+                const videos = await getVideos();
+                const video = videos.find(v => v.id === id);
+                if (!video) throw new Error('视频未找到');
+
+                // Delete video file
+                const fileData = await githubAPI(`/repos/${config.user}/${config.repo}/contents/${video.path}`);
+                await githubAPI(`/repos/${config.user}/${config.repo}/contents/${video.path}`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({
+                        message: `Delete video: ${video.title}`,
+                        sha: fileData.sha
+                    })
+                });
+
+                // Update videos.json
+                const updatedVideos = videos.filter(v => v.id !== id);
+                const videosJson = btoa(unescape(encodeURIComponent(JSON.stringify(updatedVideos, null, 2))));
+                const metaData = await githubAPI(`/repos/${config.user}/${config.repo}/contents/videos.json`);
+
+                await githubAPI(`/repos/${config.user}/${config.repo}/contents/videos.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        message: `Remove video: ${video.title}`,
+                        content: videosJson,
+                        sha: metaData.sha
+                    })
+                });
+
+                showToast('视频已删除', 'success');
+                refreshVideoList();
+            } catch (error) {
+                showToast('删除失败: ' + error.message, 'error');
+            }
+        }
+
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
