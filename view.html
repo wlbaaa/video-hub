@@ -23,21 +23,28 @@
         .header-right { display: flex; align-items: center; gap: 1rem; }
         .user-badge {
             background: rgba(102,126,234,0.15); color: #8899dd; padding: 0.4rem 0.9rem;
-            border-radius: 20px; font-size: 0.85rem; display: none;
+            border-radius: 20px; font-size: 0.85rem;
         }
-        .user-badge.visible { display: inline-block; }
         .logout-btn {
             background: #2a2a4a; color: #a0a0c0; border: none; padding: 0.4rem 0.9rem;
-            border-radius: 8px; cursor: pointer; font-size: 0.85rem; display: none;
+            border-radius: 8px; cursor: pointer; font-size: 0.85rem;
         }
-        .logout-btn.visible { display: inline-block; }
-        .nav-links { display: flex; gap: 1rem; }
+        .nav-links { display: flex; gap: 1rem; align-items: center; }
         .nav-links a {
             color: #a0a0c0; text-decoration: none; padding: 0.5rem 1rem;
             border-radius: 8px; transition: all 0.3s;
         }
         .nav-links a:hover { color: #fff; background: rgba(102,126,234,0.15); }
         .nav-links a.active { color: #667eea; background: rgba(102,126,234,0.15); }
+        .msg-btn {
+            background: rgba(102,126,234,0.15); color: #8899dd; border: none; padding: 0.5rem 1rem;
+            border-radius: 8px; cursor: pointer; font-size: 0.9rem; position: relative;
+        }
+        .msg-btn .dot {
+            position: absolute; top: 4px; right: 4px; width: 8px; height: 8px;
+            background: #e74c3c; border-radius: 50%; display: none;
+        }
+        .msg-btn .dot.show { display: block; }
         .container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
 
         .key-modal-overlay {
@@ -52,6 +59,7 @@
         }
         .key-modal h3 { margin-bottom: 0.3rem; color: #e0e0e0; font-size: 1.1rem; }
         .key-modal .subtitle { color: #8888aa; font-size: 0.85rem; margin-bottom: 1.2rem; }
+        .key-modal .auto-hint { color: #555577; font-size: 0.75rem; margin-bottom: 1rem; display: none; }
         .key-modal input {
             width: 100%; background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px;
             padding: 0.85rem 1rem; color: #e0e0e0; font-size: 0.95rem; text-align: center;
@@ -68,6 +76,8 @@
             background: linear-gradient(135deg, #667eea, #764ba2); color: white;
         }
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        .btn-ghost { background: none; color: #8888aa; border: 1px solid #2a2a4a; }
 
         .search-bar { margin-bottom: 1.5rem; }
         .search-bar input {
@@ -95,6 +105,11 @@
             position: relative; overflow: hidden;
         }
         .video-thumbnail video { width: 100%; height: 100%; object-fit: cover; }
+        .uploader-tag {
+            position: absolute; top: 8px; left: 8px; padding: 0.2rem 0.6rem;
+            border-radius: 8px; font-size: 0.75rem;
+            background: rgba(0,0,0,0.7); color: #8899dd; z-index: 5;
+        }
         .play-icon {
             position: absolute; width: 56px; height: 56px;
             background: rgba(102,126,234,0.9); border-radius: 50%;
@@ -114,10 +129,49 @@
         .video-meta {
             color: #555577; font-size: 0.8rem; display: flex; justify-content: space-between;
         }
-        .uploader-tag {
-            display: inline-block; padding: 0.1rem 0.5rem; border-radius: 8px;
-            font-size: 0.75rem; background: rgba(102,126,234,0.15); color: #8899dd;
+
+        /* Chat Panel */
+        .chat-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); z-index: 1500; justify-content: center;
+            align-items: center; padding: 1rem;
         }
+        .chat-overlay.visible { display: flex; }
+        .chat-panel {
+            background: #1a1a2e; border-radius: 16px; border: 1px solid #2a2a4a;
+            width: 100%; max-width: 450px; max-height: 80vh; display: flex; flex-direction: column;
+        }
+        .chat-header {
+            padding: 1rem 1.2rem; border-bottom: 1px solid #2a2a4a;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .chat-header h3 { font-size: 1rem; color: #e0e0e0; }
+        .chat-body {
+            flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem;
+            min-height: 300px; max-height: 50vh;
+        }
+        .chat-msg {
+            max-width: 80%; padding: 0.6rem 0.9rem; border-radius: 12px; font-size: 0.9rem;
+            line-height: 1.4; word-break: break-word;
+        }
+        .chat-msg.me {
+            align-self: flex-end; background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff; border-bottom-right-radius: 4px;
+        }
+        .chat-msg.other {
+            align-self: flex-start; background: #252540; color: #ccc;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-msg .msg-sender { font-size: 0.72rem; color: #8899dd; margin-bottom: 0.2rem; }
+        .chat-msg .msg-time { font-size: 0.68rem; color: #666; margin-top: 0.2rem; text-align: right; }
+        .chat-input-area {
+            padding: 0.8rem 1rem; border-top: 1px solid #2a2a4a; display: flex; gap: 0.5rem;
+        }
+        .chat-input-area input {
+            flex: 1; background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px;
+            padding: 0.6rem 0.8rem; color: #e0e0e0; font-size: 0.9rem; outline: none;
+        }
+        .chat-input-area input:focus { border-color: #667eea; }
 
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -168,19 +222,21 @@
             .header { padding: 1rem; }
             .container { padding: 0 1rem; }
             .modal-overlay { padding: 0; }
-            .modal-content { border-radius: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+            .modal-content { border-radius: 0; min-height: 100vh; }
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🎬 视频观看端</h1>
-        <div class="header-right">
+        <div class="header-right" id="headerRight" style="display:none;">
             <span class="user-badge" id="userBadge"></span>
-            <button class="logout-btn" id="logoutBtn" onclick="logout()">退出</button>
-            <div class="nav-links">
-                <a href="view.html" class="active">观看</a>
-            </div>
+            <button class="msg-btn" id="msgBtn" onclick="toggleChat()">💬 消息<span class="dot" id="msgDot"></span></button>
+            <button class="logout-btn" onclick="logout()">退出</button>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">主页</a>
+            <a href="view.html" class="active">观看</a>
         </div>
     </div>
 
@@ -202,9 +258,27 @@
         <div class="key-modal">
             <h3>🔐 副管理员登录</h3>
             <p class="subtitle">请输入您的账号和密码</p>
-            <input type="text" id="loginUser" placeholder="账号名称" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+            <p class="auto-hint" id="autoHint">检测到上次登录，正在自动登录...</p>
+            <input type="text" id="loginUser" placeholder="账号名称">
             <input type="password" id="loginPass" placeholder="登录密码" onkeydown="if(event.key==='Enter')checkLogin()">
             <button class="btn btn-primary" onclick="checkLogin()">登录</button>
+        </div>
+    </div>
+
+    <!-- Chat Panel -->
+    <div class="chat-overlay" id="chatOverlay">
+        <div class="chat-panel">
+            <div class="chat-header">
+                <h3>💬 消息中心</h3>
+                <button class="btn btn-ghost btn-sm" onclick="toggleChat()">关闭</button>
+            </div>
+            <div class="chat-body" id="chatBody">
+                <div style="text-align:center;color:#555577;padding:2rem;">正在加载消息...</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendMessage()">
+                <button class="btn btn-primary btn-sm" onclick="sendMessage()">发送</button>
+            </div>
         </div>
     </div>
 
@@ -231,11 +305,27 @@
         let config={user:'wlbaaa',repo:'video-hub',token:_tk};
         let allVideos=[];
         let currentUser=null;
+        let messages=[];
+        let chatPollTimer=null;
 
         async function sha256(msg){
             const buf=new TextEncoder().encode(msg);
             const hash=await crypto.subtle.digest('SHA-256',buf);
             return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+        }
+
+        // Auto login
+        function checkAutoLogin(){
+            const saved=localStorage.getItem('vh_subadmin');
+            if(saved){
+                try{
+                    const data=JSON.parse(saved);
+                    document.getElementById('loginUser').value=data.username||'';
+                    document.getElementById('loginPass').value=data.password||'';
+                    document.getElementById('autoHint').style.display='block';
+                    setTimeout(()=>{checkLogin();},800);
+                }catch(e){}
+            }
         }
 
         async function checkLogin(){
@@ -247,14 +337,15 @@
                 const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json');
                 const adminsData=JSON.parse(decodeBase64(data.content));
                 const subAdmins=adminsData.sub_admins||[];
-
                 const hash=await sha256(password);
                 const admin=subAdmins.find(a=>a.username===username&&a.password_hash===hash);
 
                 if(admin){
                     currentUser=admin.username;
+                    localStorage.setItem('vh_subadmin',JSON.stringify({username:username,password:password}));
                     unlock();
                 }else{
+                    localStorage.removeItem('vh_subadmin');
                     showToast('账号或密码错误','error');
                 }
             }catch(e){
@@ -265,32 +356,33 @@
         function unlock(){
             document.getElementById('keyModal').classList.add('hidden');
             document.getElementById('mainContainer').classList.add('content-unlocked');
+            document.getElementById('headerRight').style.display='flex';
             document.getElementById('userBadge').textContent='👤 '+currentUser;
-            document.getElementById('userBadge').classList.add('visible');
-            document.getElementById('logoutBtn').classList.add('visible');
             validateToken();
         }
 
         function logout(){
             currentUser=null;
             allVideos=[];
+            localStorage.removeItem('vh_subadmin');
+            if(chatPollTimer){clearInterval(chatPollTimer);chatPollTimer=null;}
             document.getElementById('mainContainer').classList.remove('content-unlocked');
             document.getElementById('keyModal').classList.remove('hidden');
-            document.getElementById('userBadge').classList.remove('visible');
-            document.getElementById('logoutBtn').classList.remove('visible');
+            document.getElementById('headerRight').style.display='none';
             document.getElementById('loginUser').value='';
             document.getElementById('loginPass').value='';
             document.getElementById('videoGrid').innerHTML='<div class="empty-state"><div class="empty-icon">📺</div><h3>暂无视频</h3><p>请登录后查看</p></div>';
         }
 
         document.getElementById('videoModal').addEventListener('click',(e)=>{if(e.target===e.currentTarget)closeModal();});
-        document.addEventListener('keydown',(e)=>{if(e.key==='Escape')closeModal();});
+        document.addEventListener('keydown',(e)=>{if(e.key==='Escape'){closeModal();if(document.getElementById('chatOverlay').classList.contains('visible'))toggleChat();}});
 
         async function validateToken(){
             try{
                 await githubAPI('/repos/'+config.user+'/'+config.repo);
                 showToast('欢迎, '+currentUser,'success');
                 loadVideos();
+                startChatPoll();
             }catch(error){
                 showToast('连接失败: '+error.message,'error');
             }
@@ -317,6 +409,7 @@
                 const videoUrl='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+v.path;
                 return '<div class="video-card" onclick="playVideo(\''+v.id+'\')">'+
                     '<div class="video-thumbnail">'+
+                    '<span class="uploader-tag">📹 '+escapeHtml(v.uploaded_by||'管理员')+'</span>'+
                     '<video src="'+videoUrl+'#t=1" muted preload="metadata"></video>'+
                     '<div class="play-icon">▶</div></div>'+
                     '<div class="video-info">'+
@@ -324,7 +417,6 @@
                     '<div class="video-desc">'+escapeHtml(v.description||'无描述')+'</div>'+
                     '<div class="video-meta">'+
                     '<span>'+formatSize(v.size)+'</span>'+
-                    '<span class="uploader-tag">📹 '+escapeHtml(v.uploaded_by||'管理员')+'</span>'+
                     '<span>'+formatDate(v.uploadDate)+'</span></div></div></div>';
             }).join('');
         }
@@ -358,6 +450,103 @@
             modal.classList.remove('visible');
         }
 
+        // Chat
+        function toggleChat(){
+            const overlay=document.getElementById('chatOverlay');
+            if(overlay.classList.contains('visible')){
+                overlay.classList.remove('visible');
+                document.getElementById('msgDot').classList.remove('show');
+            }else{
+                overlay.classList.add('visible');
+                document.getElementById('msgDot').classList.remove('show');
+                loadMessages();
+            }
+        }
+
+        async function loadMessages(){
+            const data=await loadMessagesData();
+            const myMsgs=data.messages||[];
+            messages=myMsgs.filter(m=>m.to===currentUser||m.from===currentUser||m.to==='all');
+            renderMessages();
+        }
+
+        async function loadMessagesData(){
+            try{
+                const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json');
+                return JSON.parse(decodeBase64(d.content));
+            }catch(e){return {messages:[]};}
+        }
+
+        async function saveMessagesData(data){
+            const json=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+            let sha=null;
+            try{const e=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json');sha=e.sha;}catch(e){}
+            const body={message:'New message',content:json};
+            if(sha)body.sha=sha;
+            await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json',{method:'PUT',body:JSON.stringify(body)});
+        }
+
+        function renderMessages(){
+            const body=document.getElementById('chatBody');
+            if(messages.length===0){
+                body.innerHTML='<div style="text-align:center;color:#555577;padding:2rem;">暂无消息</div>';
+                return;
+            }
+            body.innerHTML=messages.map(m=>{
+                const isMe=m.from===currentUser;
+                return '<div class="chat-msg '+(isMe?'me':'other')+'">'+
+                    (isMe?'':'<div class="msg-sender">'+escapeHtml(m.from)+'</div>')+
+                    '<div>'+escapeHtml(m.content)+'</div>'+
+                    '<div class="msg-time">'+formatTime(m.timestamp)+'</div></div>';
+            }).join('');
+            body.scrollTop=body.scrollHeight;
+        }
+
+        async function sendMessage(){
+            const input=document.getElementById('chatInput');
+            const content=input.value.trim();
+            if(!content)return;
+            input.value='';
+
+            const data=await loadMessagesData();
+            data.messages.push({
+                id:Date.now().toString(),
+                from:currentUser,
+                to:'管理员',
+                content:content,
+                timestamp:new Date().toISOString()
+            });
+            await saveMessagesData(data);
+            loadMessages();
+        }
+
+        let lastMsgCount=0;
+        function startChatPoll(){
+            if(chatPollTimer)clearInterval(chatPollTimer);
+            chatPollTimer=setInterval(async()=>{
+                try{
+                    const data=await loadMessagesData();
+                    const myMsgs=(data.messages||[]).filter(m=>m.to===currentUser||m.from===currentUser||m.to==='all');
+                    if(myMsgs.length>lastMsgCount){
+                        if(!document.getElementById('chatOverlay').classList.contains('visible')){
+                            document.getElementById('msgDot').classList.add('show');
+                        }
+                        messages=myMsgs;
+                        if(document.getElementById('chatOverlay').classList.contains('visible')){
+                            renderMessages();
+                        }
+                    }
+                    lastMsgCount=myMsgs.length;
+                }catch(e){}
+            },8000);
+        }
+
+        function formatTime(isoStr){
+            if(!isoStr)return'';
+            const d=new Date(isoStr);
+            return d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+        }
+
         async function githubAPI(endpoint,options={}){
             const url='https://api.github.com'+endpoint;
             const response=await fetch(url,{...options,headers:{
@@ -382,6 +571,9 @@
         function formatDate(isoStr){if(!isoStr)return'';const d=new Date(isoStr);return d.toLocaleDateString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit'});}
         function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
         function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000);}
+
+        // Init
+        checkAutoLogin();
     </script>
 </body>
 </html>
