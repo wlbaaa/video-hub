@@ -514,9 +514,9 @@
     <!-- Key Modal -->
     <div class="key-modal-overlay" id="keyModal">
         <div class="key-modal">
-            <h3>🔐 请输入访问日期</h3>
-            <p style="color:#8888aa;font-size:0.85rem;margin-bottom:1rem;">格式：年.月.日（例如 2026.7.13）</p>
-            <input type="text" id="accessKey" placeholder="2026.7.13" onkeydown="if(event.key==='Enter')checkKey()">
+            <h3>🔐 请输入访问密码</h3>
+            <p style="color:#8888aa;font-size:0.85rem;margin-bottom:1rem;">请输入预设密码</p>
+            <input type="text" id="accessKey" placeholder="请输入密码" onkeydown="if(event.key==='Enter')checkKey()">
             <button class="btn btn-primary" onclick="checkKey()">进入</button>
         </div>
     </div>
@@ -534,7 +534,7 @@
 
         function checkKey() {
             const key = document.getElementById('accessKey').value.trim();
-            if (key === getTodayKey()) {
+            if (key === 'Zz7983156') {
                 unlock();
             } else {
                 showToast('日期错误，请检查', 'error');
