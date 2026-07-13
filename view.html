@@ -534,7 +534,7 @@
                     '<div class="video-desc">'+escapeHtml(v.description||'无描述')+'</div>'+
                     '<div class="video-meta">'+
                     '<span>'+formatSize(v.size)+'</span>'+
-                    '<span>'+formatDate(v.uploadDate)+'</span></div></div></div>';
+                    '<span>'+formatDate(v.uploadDate||v.created_at)+'</span></div></div></div>';
             }).join('');
         }
 
