@@ -204,6 +204,7 @@
                 <button class="tab active" onclick="switchTab('upload')">📤 视频上传</button>
                 <button class="tab" onclick="switchTab('admins')">👥 管理副管理员</button>
                 <button class="tab" onclick="switchTab('messages')">💬 消息中心</button>
+                <button class="tab" onclick="switchTab('registrations')">📋 注册审核</button>
             </div>
 
             <!-- Upload Tab -->
@@ -257,6 +258,14 @@
             <div class="tab-panel" id="tab-messages">
                 <h3 style="margin-bottom:1rem;">消息中心</h3>
                 <div id="msgPanel">
+                    <div style="color:#555577;text-align:center;padding:2rem;">加载中...</div>
+                </div>
+            </div>
+
+            <!-- Registrations Tab -->
+            <div class="tab-panel" id="tab-registrations">
+                <h3 style="margin-bottom:1rem;">注册审核</h3>
+                <div id="regPanel">
                     <div style="color:#555577;text-align:center;padding:2rem;">加载中...</div>
                 </div>
             </div>
@@ -503,6 +512,59 @@
             document.getElementById('tab-'+name).classList.add('active');
             if(name==='admins')loadAdmins();
             if(name==='messages')loadMessagesPanel();
+            if(name==='registrations')loadRegistrations();
+        }
+
+        // Registration review
+        async function loadRegistrations(){
+            const panel=document.getElementById('regPanel');
+            try{
+                const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/registrations.json');
+                const regs=JSON.parse(decodeBase64(d.content)).registrations||[];
+                if(regs.length===0){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem;">暂无注册申请</div>';return;}
+                panel.innerHTML=regs.map((r,i)=>{
+                    return '<div class="card admin-item"><div class="info"><div class="name">'+escapeHtml(r.username)+'</div><div style="color:#888;font-size:0.85rem;margin-top:0.2rem;">'+(r.note?escapeHtml(r.note):'无备注')+'</div><div class="time">申请于 '+formatDate(r.submitted_at)+'</div></div><div style="display:flex;gap:0.5rem;"><button class="btn btn-primary btn-sm" onclick="approveReg(\''+escapeHtml(r.username)+'\')">通过</button><button class="btn btn-danger btn-sm" onclick="rejectReg('+i+')">拒绝</button></div></div>';
+                }).join('');
+            }catch(e){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem;">暂无注册申请</div>';}
+        }
+
+        async function approveReg(username){
+            try{
+                // Get registration data
+                const rd=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/registrations.json');
+                const rdata=JSON.parse(decodeBase64(rd.content));
+                const regIdx=rdata.registrations.findIndex(r=>r.username===username);
+                if(regIdx===-1)return;
+                const reg=rdata.registrations[regIdx];
+
+                // Add to admins.json
+                let admins={sub_admins:[]};
+                let asha=null;
+                try{const ad=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json');admins=JSON.parse(decodeBase64(ad.content));asha=ad.sha;}catch(e){}
+                admins.sub_admins.push({username:reg.username,password_hash:reg.password_hash,created_at:new Date().toISOString(),note:reg.note||''});
+                const ajson=btoa(unescape(encodeURIComponent(JSON.stringify(admins,null,2))));
+                const abody={message:'Approve '+username,content:ajson};if(asha)abody.sha=asha;
+                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json',{method:'PUT',body:JSON.stringify(abody)});
+
+                // Remove from registrations
+                rdata.registrations.splice(regIdx,1);
+                const rjson=btoa(unescape(encodeURIComponent(JSON.stringify(rdata,null,2))));
+                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/registrations.json',{method:'PUT',body:JSON.stringify({message:'Approve '+username,content:rjson,sha:rd.sha})});
+
+                showToast(username+' 已通过审核');loadRegistrations();loadAdmins();
+            }catch(e){showToast('操作失败: '+e.message,'error');}
+        }
+
+        async function rejectReg(index){
+            try{
+                const rd=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/registrations.json');
+                const rdata=JSON.parse(decodeBase64(rd.content));
+                const username=rdata.registrations[index].username;
+                rdata.registrations.splice(index,1);
+                const rjson=btoa(unescape(encodeURIComponent(JSON.stringify(rdata,null,2))));
+                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/registrations.json',{method:'PUT',body:JSON.stringify({message:'Reject '+username,content:rjson,sha:rd.sha})});
+                showToast('已拒绝 '+username);loadRegistrations();
+            }catch(e){showToast('操作失败: '+e.message,'error');}
         }
 
         async function githubAPI(endpoint,options={}){
