@@ -196,7 +196,7 @@ async function loadMyVideos(){
     await loadAllVideos();
     const grid=document.getElementById('videoGrid');
     const es=document.getElementById('emptyState');
-    if(!currentUser){grid.innerHTML='';es.style.display='block';document.getElementById('emptyTitle').textContent='登录后查看作品';document.getElementById('emptyDesc').textContent='使用副管理员账号登录';return}
+    if(!currentUser){grid.innerHTML='';es.style.display='block';document.getElementById('emptyTitle').textContent='登录后查看作品';document.getElementById('emptyDesc').textContent='使用副管理员账号登录';document.getElementById('emptyLoginBtn').style.display='';return}
     const myVids=allVideos.filter(v=>v.uploaded_by===currentUser);
     document.getElementById('profileCount').textContent=myVids.length+' 个作品';
     if(myVids.length===0){
@@ -204,9 +204,11 @@ async function loadMyVideos(){
         es.style.display='block';
         document.getElementById('emptyTitle').textContent='还没有作品';
         document.getElementById('emptyDesc').textContent='点击底部"创作"发布第一个视频';
+        document.getElementById('emptyLoginBtn').style.display='none';
         return;
     }
     es.style.display='none';
+    document.getElementById('emptyLoginBtn').style.display='none';
     grid.innerHTML=myVids.map(v=>`
         <div class="video-card" onclick="playVideo('${v.id}')">
             <div class="video-thumb"><span>🎬</span><div class="play-icon">▶️</div></div>
