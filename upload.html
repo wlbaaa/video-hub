@@ -526,18 +526,9 @@
         const _tk = atob(_p1 + _p2 + _p3 + _p4);
         let config = { user: 'wlbaaa', repo: 'video-hub', token: _tk };
 
-        // Check saved key
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedKey = localStorage.getItem('videoHubKey');
-            if (savedKey === 'wlbnb666') {
-                unlock();
-            }
-        });
-
         function checkKey() {
             const key = document.getElementById('accessKey').value.trim();
             if (key === 'wlbnb666') {
-                localStorage.setItem('videoHubKey', key);
                 unlock();
             } else {
                 showToast('访问密钥错误', 'error');
