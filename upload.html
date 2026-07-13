@@ -383,16 +383,18 @@
 
             const hash=await sha256(password);
             const adminsData=await loadAdminsData();
-            adminsData.sub_admins.push({
+            const newAdmin={
                 username:username,
                 password_hash:hash,
                 created_at:new Date().toISOString()
-            });
+            };
+            adminsData.sub_admins.push(newAdmin);
             await saveAdminsData(adminsData);
+            subAdmins.push(newAdmin);
+            renderAdminList();
             document.getElementById('newAdminUser').value='';
             document.getElementById('newAdminPass').value='';
             showToast('副管理员 '+username+' 添加成功','success');
-            loadSubAdmins();
         }
 
         async function removeSubAdmin(index){
@@ -400,8 +402,9 @@
             const adminsData=await loadAdminsData();
             adminsData.sub_admins.splice(index,1);
             await saveAdminsData(adminsData);
+            subAdmins.splice(index,1);
+            renderAdminList();
             showToast('已移除','success');
-            loadSubAdmins();
         }
 
         // --- File Upload ---
