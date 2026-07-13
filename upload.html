@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>视频上传 - 管理员</title>
+    <title>视频上传与管理</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -20,14 +20,13 @@
             background: linear-gradient(135deg, #667eea, #764ba2);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-        .nav-links { display: flex; gap: 1rem; }
+        .nav-links { display: flex; gap: 1rem; align-items: center; }
         .nav-links a {
             color: #a0a0c0; text-decoration: none; padding: 0.5rem 1rem;
             border-radius: 8px; transition: all 0.3s;
         }
         .nav-links a:hover { color: #fff; background: rgba(102,126,234,0.15); }
         .nav-links a.active { color: #667eea; background: rgba(102,126,234,0.15); }
-        .container { max-width: 800px; margin: 2rem auto; padding: 0 1.5rem; }
 
         .key-modal-overlay {
             display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -39,37 +38,29 @@
             background: #1a1a2e; border-radius: 16px; padding: 2rem;
             border: 1px solid #2a2a4a; text-align: center; max-width: 360px; width: 100%;
         }
-        .key-modal h3 { margin-bottom: 0.5rem; color: #e0e0e0; font-size: 1.1rem; }
+        .key-modal h3 { margin-bottom: 0.3rem; color: #e0e0e0; font-size: 1.1rem; }
         .key-modal .subtitle { color: #8888aa; font-size: 0.85rem; margin-bottom: 1.2rem; }
         .key-modal input {
             width: 100%; background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px;
-            padding: 0.9rem 1rem; color: #e0e0e0; font-size: 1rem; text-align: center;
-            outline: none; transition: border-color 0.3s; margin-bottom: 0.8rem;
+            padding: 0.85rem 1rem; color: #e0e0e0; font-size: 0.95rem; text-align: center;
+            outline: none; transition: border-color 0.3s; margin-bottom: 0.7rem;
         }
         .key-modal input:focus { border-color: #667eea; }
-        .container:not(.content-unlocked) .content-locked { display: none !important; }
 
-        /* Tabs */
-        .tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 1px solid #2a2a4a; }
-        .tab-btn {
-            padding: 0.7rem 1.3rem; background: none; border: none; color: #8888aa;
-            cursor: pointer; font-size: 0.9rem; border-bottom: 2px solid transparent;
-            transition: all 0.3s; font-weight: 500;
+        .container { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .container.locked .content-locked { display: none !important; }
+        .tabs {
+            display: flex; gap: 0.3rem; margin-bottom: 1.5rem;
+            background: #1a1a2e; border-radius: 12px; padding: 0.3rem;
         }
-        .tab-btn:hover { color: #ccc; }
-        .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
+        .tab {
+            flex: 1; padding: 0.7rem 1.2rem; text-align: center; cursor: pointer;
+            border-radius: 10px; font-size: 0.9rem; transition: all 0.3s;
+            color: #8888aa; border: none; background: transparent;
+        }
+        .tab.active { background: rgba(102,126,234,0.2); color: #667eea; }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
-
-        .input-group { display: flex; flex-direction: column; gap: 0.4rem; }
-        .input-group label { font-size: 0.85rem; color: #8888aa; }
-        .input-group input {
-            background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px;
-            padding: 0.7rem 1rem; color: #e0e0e0; font-size: 0.95rem; outline: none;
-            transition: border-color 0.3s;
-        }
-        .input-group input:focus { border-color: #667eea; }
-        .input-group input::placeholder { color: #444466; }
 
         .btn {
             padding: 0.7rem 1.5rem; border: none; border-radius: 8px;
@@ -79,197 +70,194 @@
             background: linear-gradient(135deg, #667eea, #764ba2); color: white;
         }
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-        .btn-secondary { background: #2a2a4a; color: #a0a0c0; }
-        .btn-secondary:hover { background: #3a3a5a; }
+        .btn-primary:disabled {
+            opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none;
+        }
         .btn-danger { background: #e74c3c; color: white; }
-        .btn-danger:hover { background: #c0392b; }
-        .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
-
-        .upload-area {
-            background: #1a1a2e; border: 2px dashed #2a2a4a; border-radius: 16px;
-            padding: 3rem 2rem; text-align: center; cursor: pointer;
-            transition: all 0.3s; margin-bottom: 2rem;
-        }
-        .upload-area:hover, .upload-area.drag-over {
-            border-color: #667eea; background: rgba(102,126,234,0.05);
-        }
-        .upload-icon { font-size: 3rem; margin-bottom: 1rem; }
-        .upload-area h2 { margin-bottom: 0.5rem; color: #e0e0e0; }
-        .upload-area p { color: #6666888; font-size: 0.9rem; }
-
-        .upload-form {
-            background: #1a1a2e; border-radius: 16px; padding: 1.5rem;
-            margin-bottom: 2rem; border: 1px solid #2a2a4a; display: none;
-        }
-        .upload-form.visible { display: block; }
-
-        .file-info {
-            display: flex; align-items: center; gap: 1rem; padding: 1rem;
-            background: #0f0f1a; border-radius: 8px; margin-bottom: 1rem;
-        }
-        .file-icon { font-size: 2rem; }
-        .file-details { flex: 1; }
-        .file-name { font-weight: 500; margin-bottom: 0.25rem; }
-        .file-size { color: #6666888; font-size: 0.85rem; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        .btn-ghost { background: none; color: #8888aa; border: 1px solid #2a2a4a; }
 
         .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.4rem; color: #8888aa; font-size: 0.9rem; }
+        .form-group label { display: block; margin-bottom: 0.4rem; color: #a0a0c0; font-size: 0.9rem; }
         .form-group input, .form-group textarea {
-            width: 100%; background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px;
-            padding: 0.7rem 1rem; color: #e0e0e0; font-size: 0.95rem; outline: none;
-            transition: border-color 0.3s; font-family: inherit;
+            width: 100%; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px;
+            padding: 0.75rem 1rem; color: #e0e0e0; font-size: 0.95rem; outline: none;
+            transition: border-color 0.3s; resize: vertical;
         }
         .form-group input:focus, .form-group textarea:focus { border-color: #667eea; }
-        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-group textarea { min-height: 80px; }
+        .form-group input[type="file"] {
+            padding: 0.6rem; color: #8888aa;
+        }
+        .form-group input[type="file"]::file-selector-button {
+            background: #2a2a4a; color: #ccc; border: none; padding: 0.4rem 0.8rem;
+            border-radius: 6px; cursor: pointer; margin-right: 0.5rem;
+        }
+        .upload-area {
+            background: #1a1a2e; border: 2px dashed #2a2a4a; border-radius: 16px;
+            padding: 2rem; text-align: center; transition: border-color 0.3s;
+        }
+        .upload-area:hover, .upload-area.dragover { border-color: #667eea; }
+        .upload-area .icon { font-size: 3rem; margin-bottom: 0.5rem; }
 
         .progress-bar {
-            width: 100%; height: 6px; background: #0f0f1a; border-radius: 3px;
-            overflow: hidden; margin: 1rem 0; display: none;
+            width: 100%; height: 8px; background: #2a2a4a; border-radius: 4px;
+            overflow: hidden; margin: 0.5rem 0;
         }
-        .progress-bar.visible { display: block; }
-        .progress-fill {
+        .progress-bar .fill {
             height: 100%; background: linear-gradient(90deg, #667eea, #764ba2);
-            border-radius: 3px; transition: width 0.3s; width: 0%;
+            border-radius: 4px; transition: width 0.3s; width: 0;
         }
-        .progress-text { text-align: center; color: #8888aa; font-size: 0.85rem; display: none; }
-        .progress-text.visible { display: block; }
-        .upload-actions { display: flex; gap: 1rem; margin-top: 1rem; }
 
-        /* Admin Panel */
-        .admin-panel { margin-top: 1.5rem; }
-        .admin-section {
-            background: #1a1a2e; border-radius: 16px; padding: 1.5rem;
-            border: 1px solid #2a2a4a; margin-bottom: 1.5rem;
+        .card {
+            background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 12px; padding: 1.2rem;
+            margin-bottom: 0.8rem;
         }
-        .admin-section h3 { margin-bottom: 1rem; color: #a0a0c0; font-size: 1rem; }
-        .admin-add-form { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: flex-end; }
-        .admin-add-form .input-group { flex: 1; min-width: 140px; }
-        .admin-list { margin-top: 1.2rem; }
         .admin-item {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.7rem 1rem; background: #0f0f1a; border-radius: 8px;
-            margin-bottom: 0.5rem; border: 1px solid #25253d;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .admin-item-info { flex: 1; }
-        .admin-item-username { font-weight: 500; }
-        .admin-item-date { color: #555577; font-size: 0.78rem; margin-top: 0.15rem; }
-        .admin-empty { color: #555577; text-align: center; padding: 1.5rem; font-size: 0.9rem; }
+        .admin-item .info { flex: 1; }
+        .admin-item .name { font-weight: 600; }
+        .admin-item .time { font-size: 0.8rem; color: #555577; }
 
-        .video-list { margin-top: 2rem; }
-        .video-list h3 { margin-bottom: 1rem; color: #a0a0c0; }
-        .video-item {
-            background: #1a1a2e; border-radius: 12px; padding: 1rem 1.5rem;
-            margin-bottom: 0.75rem; display: flex; align-items: center;
-            justify-content: space-between; border: 1px solid #2a2a4a; transition: all 0.3s;
+        /* Chat */
+        .chat-card {
+            background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 12px; margin-bottom: 0.8rem;
         }
-        .video-item:hover { border-color: #3a3a5a; }
-        .video-item-info { flex: 1; }
-        .video-item-title { font-weight: 500; margin-bottom: 0.25rem; }
-        .video-item-meta { color: #6666888; font-size: 0.8rem; }
+        .chat-card-header {
+            padding: 0.8rem 1.2rem; border-bottom: 1px solid #2a2a4a;
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+        }
+        .chat-card-header h4 { font-size: 0.95rem; }
+        .chat-card-body {
+            padding: 1rem; max-height: 300px; overflow-y: auto; display: flex;
+            flex-direction: column; gap: 0.5rem;
+        }
+        .chat-card-body.collapsed { display: none; }
+        .chat-msg-bubble {
+            max-width: 80%; padding: 0.5rem 0.8rem; border-radius: 10px; font-size: 0.85rem;
+            line-height: 1.4; word-break: break-word;
+        }
+        .chat-msg-bubble.from-admin {
+            align-self: flex-end; background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+        .chat-msg-bubble.to-admin {
+            align-self: flex-start; background: #252540; color: #ccc;
+        }
+        .chat-reply-area {
+            padding: 0.8rem 1rem; border-top: 1px solid #2a2a4a; display: flex; gap: 0.5rem;
+        }
+        .chat-reply-area input {
+            flex: 1; background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px;
+            padding: 0.5rem 0.8rem; color: #e0e0e0; font-size: 0.85rem; outline: none;
+        }
+        .chat-reply-area input:focus { border-color: #667eea; }
+
+        table {
+            width: 100%; border-collapse: collapse; margin-top: 1rem;
+        }
+        th, td {
+            text-align: left; padding: 0.8rem; border-bottom: 1px solid #2a2a4a;
+            font-size: 0.9rem;
+        }
+        th { color: #8888aa; font-weight: 500; }
+        td .btn { margin-right: 0.3rem; }
 
         .toast {
             position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.5rem;
             border-radius: 12px; background: #1a1a2e; border: 1px solid #2a2a4a;
             color: #e0e0e0; font-size: 0.9rem; transform: translateY(100px);
-            opacity: 0; transition: all 0.3s; z-index: 1000; max-width: 400px;
+            opacity: 0; transition: all 0.3s; z-index: 2000; max-width: 400px;
         }
         .toast.show { transform: translateY(0); opacity: 1; }
-        .toast.success { border-color: #2ed573; }
         .toast.error { border-color: #e74c3c; }
-        .empty-state { text-align: center; padding: 2rem; color: #6666888; }
-        .badge {
-            display: inline-block; padding: 0.15rem 0.5rem; border-radius: 10px;
-            font-size: 0.7rem; background: rgba(102,126,234,0.2); color: #8899dd;
-            margin-left: 0.5rem;
-        }
 
         @media (max-width: 600px) {
             .header { padding: 1rem; }
             .container { padding: 0 1rem; }
+            .tabs { flex-wrap: wrap; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>📹 视频上传端</h1>
+        <h1>📤 上传管理</h1>
         <div class="nav-links">
+            <a href="index.html">主页</a>
             <a href="upload.html" class="active">上传</a>
-            <a href="view.html">观看</a>
         </div>
     </div>
 
     <div class="container" id="mainContainer">
-        <!-- Tabs -->
-        <div class="tabs content-locked">
-            <button class="tab-btn active" onclick="switchTab('upload')">📤 视频上传</button>
-            <button class="tab-btn" onclick="switchTab('admin')">👥 管理副管理员</button>
+        <div class="key-modal-overlay" id="keyModal">
+            <div class="key-modal">
+                <h3>🔐 请输入访问密码</h3>
+                <p class="subtitle">请输入预设密码</p>
+                <input type="password" id="accessKey" placeholder="输入密码" onkeydown="if(event.key==='Enter')checkKey()">
+                <button class="btn btn-primary" onclick="checkKey()">验证</button>
+            </div>
         </div>
 
-        <!-- Upload Tab -->
-        <div class="tab-panel active content-locked" id="tab-upload">
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📁</div>
-                <h2>拖拽视频文件到这里</h2>
-                <p>或点击选择文件（支持 MP4, WebM, MOV, AVI，最大 100MB）</p>
-                <input type="file" id="fileInput" accept="video/*" style="display: none;">
+        <div class="content-locked" id="content" style="display:none;">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('upload')">📤 视频上传</button>
+                <button class="tab" onclick="switchTab('admins')">👥 管理副管理员</button>
+                <button class="tab" onclick="switchTab('messages')">💬 消息中心</button>
             </div>
 
-            <div class="upload-form" id="uploadForm">
-                <div class="file-info">
-                    <span class="file-icon">🎬</span>
-                    <div class="file-details">
-                        <div class="file-name" id="fileName">-</div>
-                        <div class="file-size" id="fileSize">-</div>
-                    </div>
-                    <button class="btn btn-secondary" onclick="cancelSelection()">取消</button>
+            <!-- Upload Tab -->
+            <div class="tab-panel active" id="tab-upload">
+                <div class="upload-area" id="uploadArea">
+                    <div class="icon">📁</div>
+                    <p>点击或拖拽视频文件到此处上传</p>
+                    <input type="file" id="fileInput" accept="video/*" multiple style="display:none;" onchange="handleFiles(this.files)">
+                    <p style="color:#555577;font-size:0.8rem;margin-top:0.5rem;">支持 MP4, MOV, AVI, MKV 等格式</p>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-top:1rem;">
                     <label>视频标题</label>
-                    <input type="text" id="videoTitle" placeholder="给视频起个名字">
+                    <input type="text" id="videoTitle" placeholder="输入视频标题">
                 </div>
                 <div class="form-group">
-                    <label>视频描述（可选）</label>
-                    <textarea id="videoDesc" placeholder="简单描述一下这个视频..."></textarea>
+                    <label>视频描述</label>
+                    <textarea id="videoDesc" placeholder="输入视频描述（可选）"></textarea>
                 </div>
-                <div class="progress-bar" id="progressBar">
-                    <div class="progress-fill" id="progressFill"></div>
+                <div class="progress-bar" id="progressBar" style="display:none;">
+                    <div class="fill" id="progressFill"></div>
                 </div>
-                <div class="progress-text" id="progressText">准备上传...</div>
-                <div class="upload-actions">
-                    <button class="btn btn-primary" id="uploadBtn" onclick="startUpload()">开始上传</button>
-                    <button class="btn btn-secondary" onclick="cancelSelection()">取消</button>
+                <p id="progressText" style="color:#555577;font-size:0.85rem;margin-top:0.3rem;display:none;"></p>
+
+                <h3 style="margin:1.5rem 0 1rem;">已上传视频</h3>
+                <div id="videoList">
+                    <div style="color:#555577;text-align:center;padding:2rem;">加载中...</div>
                 </div>
             </div>
 
-            <div class="video-list" id="videoList">
-                <h3>已上传的视频</h3>
-                <div id="videoListContent">
-                    <div class="empty-state">连接 GitHub 后查看已上传的视频</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Admin Tab -->
-        <div class="tab-panel" id="tab-admin">
-            <div class="admin-section">
-                <h3>➕ 添加副管理员</h3>
-                <div class="admin-add-form">
-                    <div class="input-group">
+            <!-- Admins Tab -->
+            <div class="tab-panel" id="tab-admins">
+                <div class="card">
+                    <h3 style="margin-bottom:1rem;">添加副管理员</h3>
+                    <div class="form-group">
                         <label>账号名称</label>
-                        <input type="text" id="newAdminUser" placeholder="副管理员用户名">
+                        <input type="text" id="adminName" placeholder="副管理员账号">
                     </div>
-                    <div class="input-group">
+                    <div class="form-group">
                         <label>登录密码</label>
-                        <input type="password" id="newAdminPass" placeholder="设置密码">
+                        <input type="password" id="adminPass" placeholder="设置登录密码">
                     </div>
-                    <button class="btn btn-primary" onclick="addSubAdmin()">添加</button>
+                    <button class="btn btn-primary" onclick="addSubAdmin()">添加副管理员</button>
+                </div>
+                <h3 style="margin-bottom:0.5rem;">副管理员列表</h3>
+                <div id="adminList">
+                    <div style="color:#555577;text-align:center;padding:2rem;">加载中...</div>
                 </div>
             </div>
-            <div class="admin-section">
-                <h3>📋 副管理员列表</h3>
-                <div id="adminList" class="admin-list">
-                    <div class="admin-empty">加载中...</div>
+
+            <!-- Messages Tab -->
+            <div class="tab-panel" id="tab-messages">
+                <h3 style="margin-bottom:1rem;">消息中心</h3>
+                <div id="msgPanel">
+                    <div style="color:#555577;text-align:center;padding:2rem;">加载中...</div>
                 </div>
             </div>
         </div>
@@ -277,232 +265,244 @@
 
     <div class="toast" id="toast"></div>
 
-    <!-- Key Modal -->
-    <div class="key-modal-overlay" id="keyModal">
-        <div class="key-modal">
-            <h3>🔐 管理员登录</h3>
-            <p class="subtitle">请输入管理员密码</p>
-            <input type="password" id="accessKey" placeholder="管理员密码" onkeydown="if(event.key==='Enter')checkKey()">
-            <button class="btn btn-primary" onclick="checkKey()">进入</button>
-        </div>
-    </div>
-
     <script>
         const _p1='Z2hw',_p2='XzdSNm0xamdINTdK',_p3='ZFlsUmpyQllDM2k5',_p4='aVRvYTFNNDByNFNlRg==';
         const _tk=atob(_p1+_p2+_p3+_p4);
         let config={user:'wlbaaa',repo:'video-hub',token:_tk};
-        let selectedFile=null;
-        let subAdmins=[];
+        let pendingFiles=[];
 
-        function checkKey(){
+        document.getElementById('uploadArea').addEventListener('click',()=>document.getElementById('fileInput').click());
+        const ua=document.getElementById('uploadArea');
+        ua.addEventListener('dragover',e=>{e.preventDefault();ua.classList.add('dragover');});
+        ua.addEventListener('dragleave',()=>ua.classList.remove('dragover'));
+        ua.addEventListener('drop',e=>{e.preventDefault();ua.classList.remove('dragover');handleFiles(e.dataTransfer.files);});
+
+        async function checkKey(){
             const key=document.getElementById('accessKey').value.trim();
-            if(key==='Zz7983156'){unlock();}
-            else{showToast('密码错误','error');}
-        }
-
-        function unlock(){
-            document.getElementById('keyModal').classList.add('hidden');
-            document.getElementById('mainContainer').classList.add('content-unlocked');
-            validateToken();
+            if(key==='Zz7983156'){
+                document.getElementById('keyModal').classList.add('hidden');
+                document.getElementById('content').style.display='block';
+                validateToken();
+            }else{
+                showToast('密码错误','error');
+            }
         }
 
         async function validateToken(){
             try{
                 await githubAPI('/repos/'+config.user+'/'+config.repo);
-                showToast('连接成功','success');
-                refreshVideoList();
-                loadSubAdmins();
-            }catch(error){
-                showToast('连接失败: '+error.message,'error');
+                loadVideoList();loadAdmins();
+            }catch(e){showToast('GitHub连接失败: '+e.message,'error');}
+        }
+
+        function handleFiles(files){
+            if(!files||files.length===0)return;
+            for(const f of files){
+                if(!f.type.startsWith('video/')){showToast(f.name+' 不是视频文件','error');continue;}
+                pendingFiles.push(f);
+                const title=document.getElementById('videoTitle').value.trim()||f.name.replace(/\.[^.]+$/,'');
+                const desc=document.getElementById('videoDesc').value.trim();
+                uploadVideo(f,title,desc);
             }
         }
 
-        function switchTab(tab){
-            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('tab-'+tab).classList.add('active');
-            if(tab==='admin') loadSubAdmins();
+        async function uploadVideo(file,title,desc){
+            const pb=document.getElementById('progressBar');
+            const pf=document.getElementById('progressFill');
+            const pt=document.getElementById('progressText');
+            pb.style.display='block';pt.style.display='block';pt.textContent='正在上传 '+file.name+'...';
+            pf.style.width='0';
+
+            try{
+                const safeName=Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+                const path='videos/'+safeName;
+                const base64Content=btoa(String.fromCharCode(...new Uint8Array(await file.arrayBuffer())));
+                pf.style.width='30%';
+                const body={message:'Upload '+file.name,content:base64Content};
+                const res=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/'+path,{method:'PUT',body:JSON.stringify(body)});
+                pf.style.width='70%';
+                pt.textContent='正在更新视频列表...';
+
+                let videos=[];
+                try{
+                    const vd=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');
+                    videos=JSON.parse(decodeBase64(vd.content));
+                }catch(e){}
+                videos.push({
+                    id:res.content.sha.substring(0,8),
+                    title:title,description:desc,path:path,
+                    size:file.size,uploadDate:new Date().toISOString(),
+                    sha:res.content.sha,uploaded_by:'管理员'
+                });
+                const vjson=btoa(unescape(encodeURIComponent(JSON.stringify(videos,null,2))));
+                let vsha=null;
+                try{const e=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');vsha=e.sha;}catch(e){}
+                const vbody={message:'Update video list',content:vjson};if(vsha)vbody.sha=vsha;
+                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json',{method:'PUT',body:JSON.stringify(vbody)});
+
+                pf.style.width='100%';
+                showToast('上传成功: '+title);
+                loadVideoList();
+                document.getElementById('videoTitle').value='';
+                document.getElementById('videoDesc').value='';
+            }catch(e){
+                showToast('上传失败: '+e.message,'error');
+            }
+            setTimeout(()=>{pb.style.display='none';pt.style.display='none';},2000);
         }
 
-        // SHA-256 hash
+        async function loadVideoList(){
+            const el=document.getElementById('videoList');
+            try{
+                const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');
+                const videos=JSON.parse(decodeBase64(data.content));
+                if(videos.length===0){el.innerHTML='<div style="color:#555577;text-align:center;padding:2rem;">暂无视频</div>';return;}
+                el.innerHTML='<table><thead><tr><th>标题</th><th>大小</th><th>上传时间</th><th>操作</th></tr></thead><tbody>'+
+                    videos.map(v=>'<tr><td>'+escapeHtml(v.title)+'</td><td>'+formatSize(v.size)+'</td><td>'+formatDate(v.uploadDate)+'</td><td><button class="btn btn-danger btn-sm" onclick="deleteVideo(\''+v.id+'\')">删除</button></td></tr>').join('')+
+                    '</tbody></table>';
+                window._videos=videos;
+            }catch(e){el.innerHTML='<div style="color:#555577;text-align:center;padding:2rem;">暂无视频</div>';}
+        }
+
+        async function deleteVideo(id){
+            const videos=window._videos||[];
+            const v=videos.find(v=>v.id===id);
+            if(!v)return;
+            if(!confirm('确定删除视频 "'+v.title+'" 吗？'))return;
+            try{
+                const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/'+v.path);
+                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/'+v.path,{method:'DELETE',body:JSON.stringify({message:'Delete '+v.title,sha:d.sha})});
+                const nd=videos.filter(v=>v.id!==id);
+                const vjson=btoa(unescape(encodeURIComponent(JSON.stringify(nd,null,2))));
+                const vd=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');
+                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json',{method:'PUT',body:JSON.stringify({message:'Update video list',content:vjson,sha:vd.sha})});
+                showToast('已删除: '+v.title);loadVideoList();
+            }catch(e){showToast('删除失败: '+e.message,'error');}
+        }
+
+        // Sub admins
+        let subAdmins=[];
+        async function loadAdmins(){
+            try{
+                const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json');
+                const adminsData=JSON.parse(decodeBase64(data.content));
+                subAdmins=adminsData.sub_admins||[];
+                renderAdminList();
+            }catch(e){subAdmins=[];renderAdminList();}
+        }
+
+        function renderAdminList(){
+            const el=document.getElementById('adminList');
+            if(subAdmins.length===0){el.innerHTML='<div style="color:#555577;text-align:center;padding:2rem;">暂无副管理员</div>';return;}
+            el.innerHTML=subAdmins.map((a,i)=>'<div class="card admin-item"><div class="info"><div class="name">'+escapeHtml(a.username)+'</div><div class="time">创建于 '+formatDate(a.created_at)+'</div></div><button class="btn btn-danger btn-sm" onclick="removeSubAdmin('+i+')">移除</button></div>').join('');
+        }
+
         async function sha256(msg){
             const buf=new TextEncoder().encode(msg);
             const hash=await crypto.subtle.digest('SHA-256',buf);
             return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
         }
 
-        // --- Sub Admin Management ---
-        async function loadAdminsData(){
-            try{
-                const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json');
-                return JSON.parse(decodeBase64(data.content));
-            }catch(e){return {sub_admins:[]};}
-        }
-
-        async function saveAdminsData(adminsData){
-            const json=btoa(unescape(encodeURIComponent(JSON.stringify(adminsData,null,2))));
-            let sha=null;
-            try{
-                const e=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json');
-                sha=e.sha;
-            }catch(e){}
-            const body={message:'Update admins',content:json};
-            if(sha) body.sha=sha;
-            await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json',{method:'PUT',body:JSON.stringify(body)});
-        }
-
-        async function loadSubAdmins(){
-            const data=await loadAdminsData();
-            subAdmins=data.sub_admins||[];
-            renderAdminList();
-        }
-
-        function renderAdminList(){
-            const list=document.getElementById('adminList');
-            if(subAdmins.length===0){
-                list.innerHTML='<div class="admin-empty">暂无副管理员，请通过上方表单添加</div>';
-                return;
-            }
-            list.innerHTML=subAdmins.map((a,i)=>'<div class="admin-item">'+
-                '<div class="admin-item-info">'+
-                '<span class="admin-item-username">'+escapeHtml(a.username)+'</span>'+
-                '<div class="admin-item-date">添加于 '+new Date(a.created_at).toLocaleString('zh-CN')+'</div>'+
-                '</div>'+
-                '<button class="btn btn-danger btn-sm" onclick="removeSubAdmin('+i+')">移除</button>'+
-            '</div>').join('');
-        }
-
         async function addSubAdmin(){
-            const username=document.getElementById('newAdminUser').value.trim();
-            const password=document.getElementById('newAdminPass').value.trim();
-            if(!username||!password){showToast('请填写账号和密码','error');return;}
-            if(username.length<2){showToast('账号至少2个字符','error');return;}
-            if(password.length<4){showToast('密码至少4个字符','error');return;}
-            if(subAdmins.find(a=>a.username===username)){showToast('该账号已存在','error');return;}
-
-            const hash=await sha256(password);
-            const adminsData=await loadAdminsData();
-            const newAdmin={
-                username:username,
-                password_hash:hash,
-                created_at:new Date().toISOString()
-            };
-            adminsData.sub_admins.push(newAdmin);
-            await saveAdminsData(adminsData);
+            const name=document.getElementById('adminName').value.trim();
+            const pass=document.getElementById('adminPass').value.trim();
+            if(!name||!pass){showToast('请填写账号和密码','error');return;}
+            if(subAdmins.find(a=>a.username===name)){showToast('该账号已存在','error');return;}
+            const hash=await sha256(pass);
+            const newAdmin={username:name,password_hash:hash,created_at:new Date().toISOString()};
             subAdmins.push(newAdmin);
+            const json=btoa(unescape(encodeURIComponent(JSON.stringify({sub_admins:subAdmins},null,2))));
+            let sha=null;
+            try{const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json');sha=d.sha;}catch(e){}
+            const body={message:'Add sub admin '+name,content:json};if(sha)body.sha=sha;
+            await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json',{method:'PUT',body:JSON.stringify(body)});
+            showToast('副管理员 '+name+' 已添加');
+            document.getElementById('adminName').value='';
+            document.getElementById('adminPass').value='';
             renderAdminList();
-            document.getElementById('newAdminUser').value='';
-            document.getElementById('newAdminPass').value='';
-            showToast('副管理员 '+username+' 添加成功','success');
         }
 
         async function removeSubAdmin(index){
-            if(!confirm('确定移除副管理员 '+subAdmins[index].username+' 吗？'))return;
-            const adminsData=await loadAdminsData();
-            adminsData.sub_admins.splice(index,1);
-            await saveAdminsData(adminsData);
+            const admin=subAdmins[index];
+            if(!confirm('确定移除副管理员 "'+admin.username+'" 吗？'))return;
             subAdmins.splice(index,1);
-            renderAdminList();
-            showToast('已移除','success');
+            const json=btoa(unescape(encodeURIComponent(JSON.stringify({sub_admins:subAdmins},null,2))));
+            const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json');
+            await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json',{method:'PUT',body:JSON.stringify({message:'Remove sub admin '+admin.username,content:json,sha:d.sha})});
+            showToast('已移除: '+admin.username);renderAdminList();
         }
 
-        // --- File Upload ---
-        const uploadArea=document.getElementById('uploadArea');
-        const fileInput=document.getElementById('fileInput');
-        uploadArea.addEventListener('click',()=>fileInput.click());
-        uploadArea.addEventListener('dragover',(e)=>{e.preventDefault();uploadArea.classList.add('drag-over');});
-        uploadArea.addEventListener('dragleave',()=>uploadArea.classList.remove('drag-over'));
-        uploadArea.addEventListener('drop',(e)=>{
-            e.preventDefault();uploadArea.classList.remove('drag-over');
-            const files=e.dataTransfer.files;if(files.length>0)handleFile(files[0]);
-        });
-        fileInput.addEventListener('change',(e)=>{if(e.target.files.length>0)handleFile(e.target.files[0]);});
-
-        function handleFile(file){
-            if(!file.type.startsWith('video/')){showToast('请选择视频文件','error');return;}
-            if(file.size>100*1024*1024){showToast('文件大小不能超过 100MB','error');return;}
-            selectedFile=file;
-            document.getElementById('fileName').textContent=file.name;
-            document.getElementById('fileSize').textContent=formatSize(file.size);
-            document.getElementById('videoTitle').value=file.name.replace(/\.[^/.]+$/,'');
-            document.getElementById('uploadForm').classList.add('visible');
-        }
-
-        function cancelSelection(){
-            selectedFile=null;fileInput.value='';
-            document.getElementById('uploadForm').classList.remove('visible');
-            document.getElementById('progressBar').classList.remove('visible');
-            document.getElementById('progressText').classList.remove('visible');
-        }
-
-        async function startUpload(){
-            if(!selectedFile)return;
-            const title=document.getElementById('videoTitle').value.trim();
-            const desc=document.getElementById('videoDesc').value.trim();
-            if(!title){showToast('请输入视频标题','error');return;}
-
-            const uploadBtn=document.getElementById('uploadBtn');
-            const progressBar=document.getElementById('progressBar');
-            const progressFill=document.getElementById('progressFill');
-            const progressText=document.getElementById('progressText');
-            uploadBtn.disabled=true;
-            progressBar.classList.add('visible');
-            progressText.classList.add('visible');
-            progressText.textContent='正在读取文件...';
-            progressFill.style.width='10%';
-
+        // Messages
+        async function loadMessagesPanel(){
+            const panel=document.getElementById('msgPanel');
             try{
-                const reader=new FileReader();
-                const base64Promise=new Promise((resolve,reject)=>{
-                    reader.onload=()=>resolve(reader.result.split(',')[1]);
-                    reader.onerror=reject;
+                const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json');
+                const all=JSON.parse(decodeBase64(data.content));
+                const msgs=all.messages||[];
+                if(msgs.length===0){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem;">暂无消息</div>';return;}
+                // Group by sender
+                const grouped={};
+                msgs.forEach(m=>{
+                    const key=m.from==='管理员'?m.to:m.from;
+                    if(!grouped[key])grouped[key]=[];
+                    grouped[key].push(m);
                 });
-                reader.readAsDataURL(selectedFile);
-                const base64Content=await base64Promise;
-                progressFill.style.width='40%';
-                progressText.textContent='正在上传视频文件...';
+                panel.innerHTML=Object.entries(grouped).map(([user,userMsgs])=>{
+                    const mhtml=userMsgs.map(m=>{
+                        const isAdmin=m.from==='管理员';
+                        return '<div class="chat-msg-bubble '+(isAdmin?'from-admin':'to-admin')+'">'+
+                            '<div style="font-size:0.72rem;color:#8899dd;">'+(isAdmin?'管理员 → '+escapeHtml(m.to):escapeHtml(m.from)+' → 管理员')+'</div>'+
+                            '<div>'+escapeHtml(m.content)+'</div>'+
+                            '<div style="font-size:0.68rem;color:#666;text-align:right;">'+formatTime(m.timestamp)+'</div>'+
+                            '</div>';
+                    }).join('');
+                    return '<div class="chat-card">'+
+                        '<div class="chat-card-header" onclick="toggleChatCard(this)"><h4>💬 '+escapeHtml(user)+' <span style="font-size:0.75rem;color:#555577;">('+userMsgs.length+'条)</span></h4><span style="color:#8888aa;">▼</span></div>'+
+                        '<div class="chat-card-body">'+mhtml+'</div>'+
+                        '<div class="chat-reply-area"><input type="text" placeholder="回复 '+escapeHtml(user)+'..." data-user="'+escapeHtml(user)+'" onkeydown="if(event.key==='Enter')adminReply(this)"><button class="btn btn-primary btn-sm" onclick="adminReply(this.previousElementSibling)">发送</button></div>'+
+                        '</div>';
+                }).join('');
+            }catch(e){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem;">暂无消息</div>';}
+        }
 
-                const safeFileName=selectedFile.name.replace(/[^a-zA-Z0-9._\-\u4e00-\u9fff]/g,'_');
-                const videoPath='videos/'+Date.now()+'_'+safeFileName;
-                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/'+videoPath,{
-                    method:'PUT',body:JSON.stringify({message:'Upload video: '+title,content:base64Content})
-                });
-
-                progressFill.style.width='70%';
-                progressText.textContent='正在更新视频列表...';
-
-                let videos=[];
+        async function adminReply(input){
+            const toUser=input.getAttribute('data-user');
+            const content=input.value.trim();
+            if(!content)return;
+            input.value='';
+            try{
+                let data={messages:[]};
                 try{
-                    const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');
-                    videos=JSON.parse(decodeBase64(data.content));
+                    const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json');
+                    data=JSON.parse(decodeBase64(d.content));
                 }catch(e){}
-
-                const videoEntry={
-                    id:Date.now().toString(),title:title,description:desc,
-                    path:videoPath,fileName:selectedFile.name,size:selectedFile.size,
-                    uploadDate:new Date().toISOString(),
-                    uploaded_by:'管理员'
-                };
-                videos.unshift(videoEntry);
-                const videosJson=btoa(unescape(encodeURIComponent(JSON.stringify(videos,null,2))));
-
+                data.messages.push({
+                    id:Date.now().toString(),from:'管理员',to:toUser,
+                    content:content,timestamp:new Date().toISOString()
+                });
+                const json=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
                 let sha=null;
-                try{const e=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');sha=e.sha;}catch(e){}
-                const body={message:'Add video: '+title,content:videosJson};
-                if(sha)body.sha=sha;
-                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json',{method:'PUT',body:JSON.stringify(body)});
+                try{const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json');sha=d.sha;}catch(e){}
+                const body={message:'Admin reply to '+toUser,content:json};if(sha)body.sha=sha;
+                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json',{method:'PUT',body:JSON.stringify(body)});
+                showToast('已回复 '+toUser);
+                loadMessagesPanel();
+            }catch(e){showToast('发送失败: '+e.message,'error');}
+        }
 
-                progressFill.style.width='100%';
-                progressText.textContent='上传完成！';
-                showToast('视频上传成功','success');
-                setTimeout(()=>{cancelSelection();document.getElementById('videoDesc').value='';refreshVideoList();},1500);
-            }catch(error){
-                console.error('Upload error:',error);
-                progressText.textContent='上传失败';
-                showToast('上传失败: '+error.message,'error');
-                uploadBtn.disabled=false;
-            }
+        function toggleChatCard(header){
+            const body=header.nextElementSibling;
+            body.classList.toggle('collapsed');
+            header.querySelector('span:last-child').textContent=body.classList.contains('collapsed')?'▶':'▼';
+        }
+
+        function switchTab(name){
+            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+            document.querySelector('.tab[onclick*="'+name+'"]').classList.add('active');
+            document.getElementById('tab-'+name).classList.add('active');
+            if(name==='admins')loadAdmins();
+            if(name==='messages')loadMessagesPanel();
         }
 
         async function githubAPI(endpoint,options={}){
@@ -517,50 +517,10 @@
             return response.json();
         }
 
-        async function getVideos(){
-            try{
-                const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');
-                return JSON.parse(decodeBase64(data.content));
-            }catch(e){return [];}
-        }
-
         function decodeBase64(str){return decodeURIComponent(escape(atob(str.replace(/\n/g,''))));}
-
-        async function refreshVideoList(){
-            const content=document.getElementById('videoListContent');
-            try{
-                const videos=await getVideos();
-                if(videos.length===0){content.innerHTML='<div class="empty-state">还没有上传任何视频</div>';return;}
-                content.innerHTML=videos.map(v=>'<div class="video-item"><div class="video-item-info">'+
-                    '<div class="video-item-title">'+escapeHtml(v.title)+'</div>'+
-                    '<div class="video-item-meta">'+formatSize(v.size)+' · '+
-                    new Date(v.uploadDate).toLocaleString('zh-CN')+
-                    ' · 上传者: '+escapeHtml(v.uploaded_by||'管理员')+'</div></div>'+
-                    '<button class="btn btn-danger" style="padding:0.4rem 0.8rem;font-size:0.8rem;" onclick="deleteVideo(\''+v.id+'\')">删除</button></div>').join('');
-            }catch(e){content.innerHTML='<div class="empty-state">加载失败，请检查配置</div>';}
-        }
-
-        async function deleteVideo(id){
-            if(!confirm('确定要删除这个视频吗？'))return;
-            try{
-                const videos=await getVideos();
-                const video=videos.find(v=>v.id===id);
-                if(!video)throw new Error('视频未找到');
-                const fileData=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/'+video.path);
-                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/'+video.path,{
-                    method:'DELETE',body:JSON.stringify({message:'Delete video: '+video.title,sha:fileData.sha})
-                });
-                const updatedVideos=videos.filter(v=>v.id!==id);
-                const vj=btoa(unescape(encodeURIComponent(JSON.stringify(updatedVideos,null,2))));
-                const md=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');
-                await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json',{
-                    method:'PUT',body:JSON.stringify({message:'Remove video: '+video.title,content:vj,sha:md.sha})
-                });
-                showToast('视频已删除','success');refreshVideoList();
-            }catch(error){showToast('删除失败: '+error.message,'error');}
-        }
-
         function formatSize(b){if(!b||b===0)return'0 B';const k=1024;const s=['B','KB','MB','GB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i];}
+        function formatDate(isoStr){if(!isoStr)return'';const d=new Date(isoStr);return d.toLocaleDateString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit'});}
+        function formatTime(isoStr){if(!isoStr)return'';const d=new Date(isoStr);return d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});}
         function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
         function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000);}
     </script>
