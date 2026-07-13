@@ -52,6 +52,12 @@
             background: rgba(0,0,0,0.85); z-index: 2000; align-items: center;
             justify-content: center; padding: 1rem;
         }
+        
+        .remember-me { display: flex; align-items: center; gap: 0.5rem; margin: 0.7rem 0; justify-content: center; }
+        .remember-me input[type="checkbox"] {
+            width: 16px; height: 16px; accent-color: #667eea; cursor: pointer;
+        }
+        .remember-me label { color: #8888aa; font-size: 0.85rem; cursor: pointer; }
         .key-modal-overlay.hidden { display: none !important; }
         .key-modal {
             background: #1a1a2e; border-radius: 16px; padding: 2rem;
@@ -261,6 +267,10 @@
             <p class="auto-hint" id="autoHint">检测到上次登录，正在自动登录...</p>
             <input type="text" id="loginUser" placeholder="账号名称">
             <input type="password" id="loginPass" placeholder="登录密码" onkeydown="if(event.key==='Enter')checkLogin()">
+            <div class="remember-me">
+                <input type="checkbox" id="rememberMe" checked>
+                <label for="rememberMe">保持登录状态</label>
+            </div>
             <button class="btn btn-primary" onclick="checkLogin()">登录</button>
         </div>
     </div>
@@ -342,7 +352,11 @@
 
                 if(admin){
                     currentUser=admin.username;
-                    localStorage.setItem('vh_subadmin',JSON.stringify({username:username,password:password}));
+                    if(document.getElementById('rememberMe').checked){
+                        localStorage.setItem('vh_subadmin',JSON.stringify({username:username,password:password}));
+                    } else {
+                        localStorage.removeItem('vh_subadmin');
+                    }
                     unlock();
                 }else{
                     localStorage.removeItem('vh_subadmin');
