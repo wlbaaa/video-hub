@@ -717,9 +717,9 @@
         }
 
         async function validateToken() {
-            const user = document.getElementById('githubUser').value.trim();
-            const repo = document.getElementById('githubRepo').value.trim();
-            const token = document.getElementById('githubToken').value.trim();
+            const user = document.getElementById('githubUser').value.trim() || config.user;
+            const repo = document.getElementById('githubRepo').value.trim() || config.repo;
+            const token = document.getElementById('githubToken').value.trim() || config.token;
 
             if (!user || !repo || !token) {
                 showToast('请填写所有配置项', 'error');
