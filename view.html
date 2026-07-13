@@ -190,8 +190,18 @@
             border-radius: 16px; overflow: hidden; border: 1px solid #2a2a4a;
             max-height: 90vh; overflow-y: auto;
         }
-        .modal-video { width: 100%; aspect-ratio: 16/9; background: #000; }
+        .modal-video { width: 100%; aspect-ratio: 16/9; background: #000; position: relative; }
         .modal-video video { width: 100%; height: 100%; }
+        .modal-uploader {
+            position: absolute; top: 12px; left: 12px; display: flex; align-items: center; gap: 0.5rem;
+            background: rgba(0,0,0,0.75); border-radius: 24px; padding: 0.35rem 0.8rem 0.35rem 0.4rem;
+            z-index: 10; backdrop-filter: blur(6px);
+        }
+        .modal-uploader .mu-avatar {
+            width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+        .modal-uploader .mu-name { font-size: 0.85rem; color: #ddd; }
         .modal-info { padding: 1.5rem; }
         .modal-title { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem; }
         .modal-desc { color: #8888aa; margin-bottom: 0.75rem; line-height: 1.5; }
@@ -317,6 +327,10 @@
         <div class="modal-content">
             <div class="modal-video">
                 <video id="modalPlayer" controls></video>
+                <div class="modal-uploader" id="modalUploader" style="display:none;">
+                    <div class="mu-avatar" id="muAvatar"></div>
+                    <span class="mu-name" id="muName"></span>
+                </div>
             </div>
             <div class="modal-info">
                 <div class="modal-title" id="modalTitle"></div>
@@ -475,6 +489,12 @@
             renderVideos(f);
         }
 
+        function avatarColor(name){
+            var hash=0,i;
+            for(i=0;i<name.length;i++)hash=name.charCodeAt(i)+((hash<<5)-hash);
+            var h=Math.abs(hash)%360;
+            return 'hsl('+h+',55%,45%)';
+        }
         function playVideo(id){
             var v=allVideos.find(function(x){return x.id===id;});
             if(!v)return;
@@ -486,6 +506,12 @@
             document.getElementById('modalDesc').textContent=v.description||'';
             document.getElementById('modalMeta').textContent=formatSize(v.size)+' · '+
                 new Date(v.uploadDate).toLocaleString('zh-CN')+' · 上传者: '+(v.uploaded_by||'管理员');
+            var uName=v.uploaded_by||'管理员';
+            document.getElementById('muName').textContent=uName;
+            var av=document.getElementById('muAvatar');
+            av.style.background=avatarColor(uName);
+            av.textContent=uName.charAt(0).toUpperCase();
+            document.getElementById('modalUploader').style.display='flex';
             player.src=vu;
             modal.classList.add('visible');
             player.play().catch(function(){});
