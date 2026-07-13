@@ -514,8 +514,9 @@
     <!-- Key Modal -->
     <div class="key-modal-overlay" id="keyModal">
         <div class="key-modal">
-            <h3>🔐 请输入访问密钥</h3>
-            <input type="password" id="accessKey" placeholder="访问密钥" onkeydown="if(event.key==='Enter')checkKey()">
+            <h3>🔐 请输入访问日期</h3>
+            <p style="color:#8888aa;font-size:0.85rem;margin-bottom:1rem;">格式：年.月.日（例如 2026.7.13）</p>
+            <input type="text" id="accessKey" placeholder="2026.7.13" onkeydown="if(event.key==='Enter')checkKey()">
             <button class="btn btn-primary" onclick="checkKey()">进入</button>
         </div>
     </div>
@@ -526,12 +527,17 @@
         const _tk = atob(_p1 + _p2 + _p3 + _p4);
         let config = { user: 'wlbaaa', repo: 'video-hub', token: _tk };
 
+        function getTodayKey() {
+            const d = new Date();
+            return d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate();
+        }
+
         function checkKey() {
             const key = document.getElementById('accessKey').value.trim();
-            if (key === 'wlbnb666') {
+            if (key === getTodayKey()) {
                 unlock();
             } else {
-                showToast('访问密钥错误', 'error');
+                showToast('日期错误，请检查', 'error');
             }
         }
 
