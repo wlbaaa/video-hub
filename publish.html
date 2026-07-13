@@ -328,13 +328,13 @@ async function doPublish(){
                 method:'PUT',
                 body:JSON.stringify({message:'publish: '+title,content:base64})
             });
-            // Update videos.json
+            // Update videos.json (flat array structure)
             let sha=null;
             try{const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json');sha=r.sha}catch(e){}
-            let vData={videos:[]};
+            let vData=[];
             try{const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json');vData=JSON.parse(decodeBase64(r.content))}catch(e){}
-            vData.videos=vData.videos||[];
-            vData.videos.unshift(newVideo);
+            if(!Array.isArray(vData)) vData=[];
+            vData.unshift(newVideo);
             const content=btoa(unescape(encodeURIComponent(JSON.stringify(vData,null,2))));
             await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json',{
                 method:'PUT',
