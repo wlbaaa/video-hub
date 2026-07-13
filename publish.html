@@ -208,13 +208,20 @@ async function compressVideo(file,targetMB){
         var url=URL.createObjectURL(file);
         video.muted=true;video.playsInline=true;video.preload='auto';
         var duration=30;
-        var started=false;
-        var timeout=null;
+        var metadataTimer=null,overallTimer=null;
+        function cleanup(){clearTimeout(metadataTimer);clearTimeout(overallTimer);URL.revokeObjectURL(url)}
+        // Overall safety: 120s max
+        overallTimer=setTimeout(function(){cleanup();reject(new Error('压缩超时'))},120000);
+        // Metadata timeout: 15s
+        metadataTimer=setTimeout(function(){cleanup();reject(new Error('视频加载超时'))},15000);
         video.onloadedmetadata=function(){
+            clearTimeout(metadataTimer);
             duration=video.duration||30;
             var w=Math.min(video.videoWidth,960);
             var h=Math.round(w*(video.videoHeight/video.videoWidth));
             h=h%2?h+1:h;w=w%2?w+1:w;
+            var inf=document.getElementById('uploadStatus');
+            if(inf)inf.textContent='压缩中... '+w+'×'+h+' '+Math.round(duration)+'s';
             var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
             var ctx=canvas.getContext('2d');
             var stream=canvas.captureStream(25);
@@ -225,24 +232,21 @@ async function compressVideo(file,targetMB){
             var chunks=[];
             recorder.ondataavailable=function(e){chunks.push(e.data)};
             recorder.onstop=function(){
-                clearTimeout(timeout);
+                clearTimeout(overallTimer);
                 URL.revokeObjectURL(url);
                 var blob=new Blob(chunks,{type:'video/webm'});
                 var compressed=new File([blob],file.name.replace(/\.[^.]+$/,'.webm'),{type:'video/webm'});
                 resolve(compressed);
             };
+            var ended=false;
             function stopRecorder(){
-                if(recorder.state==='recording'){
-                    try{recorder.stop()}catch(e){}
-                }
+                if(ended)return;ended=true;
+                if(recorder.state==='recording'){try{recorder.stop()}catch(e){}}
             }
-            // Safety timeout: max duration + 10s
-            timeout=setTimeout(stopRecorder,(duration+10)*1000);
             video.onended=stopRecorder;
-            video.onerror=function(){clearTimeout(timeout);URL.revokeObjectURL(url);reject(new Error('视频解码失败'))};
+            video.onerror=function(){clearTimeout(overallTimer);URL.revokeObjectURL(url);reject(new Error('视频解码失败'))};
             recorder.start(500);
             video.play().then(function(){
-                started=true;
                 function drawFrame(){
                     if(video.paused||video.ended){stopRecorder();return}
                     if(video.currentTime>=duration-0.1){stopRecorder();return}
@@ -251,9 +255,9 @@ async function compressVideo(file,targetMB){
                 }
                 drawFrame();
             }).catch(function(e){
-                clearTimeout(timeout);
+                clearTimeout(overallTimer);
                 URL.revokeObjectURL(url);
-                reject(new Error('播放失败'));
+                reject(new Error('播放被阻止，请检查浏览器权限'));
             });
         };
         video.src=url;video.load();
