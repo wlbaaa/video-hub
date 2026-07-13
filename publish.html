@@ -141,10 +141,10 @@ async function doLogin(e){
     const p=document.getElementById('loginPass').value.trim();
     if(!u||!p)return;
     try{
-        const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/sub_admins.json');
-        const admins=JSON.parse(decodeBase64(r.content));
+        const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/admins.json');
+        const admins=JSON.parse(decodeBase64(r.content)).sub_admins||[];
         const found=admins.find(a=>a.username===u);
-        if(!found||(await sha256(p))!==found.password){
+        if(!found||(await sha256(p))!==found.password_hash){
             document.getElementById('loginError').style.display='block';
             document.getElementById('loginError').textContent='用户名或密码错误';
             return;
@@ -316,10 +316,10 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
         const data=JSON.parse(saved);
         const u=data.username;const p=data.password;
         if(!u||!p)return;
-        const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/sub_admins.json');
-        const admins=JSON.parse(decodeBase64(r.content));
+        const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/admins.json');
+        const admins=JSON.parse(decodeBase64(r.content)).sub_admins||[];
         const found=admins.find(a=>a.username===u);
-        if(!found||(await sha256(p))!==found.password)return;
+        if(!found||(await sha256(p))!==found.password_hash)return;
         currentUser=u;
         document.getElementById('btnAccount').textContent='退出';
         document.getElementById('btnAccount').onclick=logout;
