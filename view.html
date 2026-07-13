@@ -5,485 +5,182 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>视频观看</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: #0f0f1a;
-            color: #e0e0e0;
-            min-height: 100vh;
+            background: #0f0f1a; color: #e0e0e0; min-height: 100vh;
         }
-
         .header {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            padding: 1.2rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #2a2a4a;
-            flex-wrap: wrap;
-            gap: 1rem;
+            padding: 1.2rem 2rem; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 1px solid #2a2a4a; flex-wrap: wrap; gap: 1rem;
         }
-
         .header h1 {
             font-size: 1.5rem;
             background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-
-        .nav-links {
-            display: flex;
-            gap: 1rem;
+        .header-right { display: flex; align-items: center; gap: 1rem; }
+        .user-badge {
+            background: rgba(102,126,234,0.15); color: #8899dd; padding: 0.4rem 0.9rem;
+            border-radius: 20px; font-size: 0.85rem; display: none;
         }
-
+        .user-badge.visible { display: inline-block; }
+        .logout-btn {
+            background: #2a2a4a; color: #a0a0c0; border: none; padding: 0.4rem 0.9rem;
+            border-radius: 8px; cursor: pointer; font-size: 0.85rem; display: none;
+        }
+        .logout-btn.visible { display: inline-block; }
+        .nav-links { display: flex; gap: 1rem; }
         .nav-links a {
-            color: #a0a0c0;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            transition: all 0.3s;
+            color: #a0a0c0; text-decoration: none; padding: 0.5rem 1rem;
+            border-radius: 8px; transition: all 0.3s;
         }
-
-        .nav-links a:hover {
-            color: #fff;
-            background: rgba(102, 126, 234, 0.15);
-        }
-
-        .nav-links a.active {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.15);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
-        }
+        .nav-links a:hover { color: #fff; background: rgba(102,126,234,0.15); }
+        .nav-links a.active { color: #667eea; background: rgba(102,126,234,0.15); }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
 
         .key-modal-overlay {
-            display: flex;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
+            display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); z-index: 2000; align-items: center;
+            justify-content: center; padding: 1rem;
         }
-
-        .key-modal-overlay.hidden {
-            display: none !important;
-        }
-
+        .key-modal-overlay.hidden { display: none !important; }
         .key-modal {
-            background: #1a1a2e;
-            border-radius: 16px;
-            padding: 2rem;
-            border: 1px solid #2a2a4a;
-            text-align: center;
-            max-width: 360px;
-            width: 100%;
+            background: #1a1a2e; border-radius: 16px; padding: 2rem;
+            border: 1px solid #2a2a4a; text-align: center; max-width: 360px; width: 100%;
         }
-
-        .key-modal h3 {
-            margin-bottom: 1.5rem;
-            color: #e0e0e0;
-            font-size: 1.1rem;
-        }
-
+        .key-modal h3 { margin-bottom: 0.3rem; color: #e0e0e0; font-size: 1.1rem; }
+        .key-modal .subtitle { color: #8888aa; font-size: 0.85rem; margin-bottom: 1.2rem; }
         .key-modal input {
-            width: 100%;
-            background: #0f0f1a;
-            border: 1px solid #2a2a4a;
-            border-radius: 8px;
-            padding: 0.9rem 1rem;
-            color: #e0e0e0;
-            font-size: 1rem;
-            text-align: center;
-            letter-spacing: 2px;
-            outline: none;
-            transition: border-color 0.3s;
-            margin-bottom: 1rem;
+            width: 100%; background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px;
+            padding: 0.85rem 1rem; color: #e0e0e0; font-size: 0.95rem; text-align: center;
+            outline: none; transition: border-color 0.3s; margin-bottom: 0.7rem;
         }
-
-        .key-modal input:focus {
-            border-color: #667eea;
-        }
-
-        .container:not(.content-unlocked) .content-locked {
-            display: none !important;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-
-        .input-group label {
-            font-size: 0.85rem;
-            color: #8888aa;
-        }
-
-        .input-group input {
-            background: #0f0f1a;
-            border: 1px solid #2a2a4a;
-            border-radius: 8px;
-            padding: 0.7rem 1rem;
-            color: #e0e0e0;
-            font-size: 0.95rem;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .input-group input:focus {
-            border-color: #667eea;
-        }
-
-        .input-group input::placeholder {
-            color: #444466;
-        }
+        .key-modal input:focus { border-color: #667eea; }
+        .container:not(.content-unlocked) .content-locked { display: none !important; }
 
         .btn {
-            padding: 0.7rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 500;
+            padding: 0.7rem 1.5rem; border: none; border-radius: 8px;
+            font-size: 0.95rem; cursor: pointer; transition: all 0.3s; font-weight: 500;
         }
-
         .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
         }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
 
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin-left: 0.5rem;
-        }
-
-        .status-badge.connected {
-            background: rgba(46, 213, 115, 0.15);
-            color: #2ed573;
-        }
-
-        .status-badge.disconnected {
-            background: rgba(231, 76, 60, 0.15);
-            color: #e74c3c;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-
-        .search-bar {
-            margin-bottom: 1.5rem;
-        }
-
+        .search-bar { margin-bottom: 1.5rem; }
         .search-bar input {
-            width: 100%;
-            background: #1a1a2e;
-            border: 1px solid #2a2a4a;
-            border-radius: 12px;
-            padding: 0.9rem 1.2rem;
-            color: #e0e0e0;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.3s;
+            width: 100%; background: #1a1a2e; border: 1px solid #2a2a4a;
+            border-radius: 12px; padding: 0.9rem 1.2rem; color: #e0e0e0;
+            font-size: 1rem; outline: none; transition: border-color 0.3s;
         }
-
-        .search-bar input:focus {
-            border-color: #667eea;
-        }
-
-        .search-bar input::placeholder {
-            color: #444466;
-        }
+        .search-bar input:focus { border-color: #667eea; }
+        .search-bar input::placeholder { color: #444466; }
 
         .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.5rem;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;
         }
-
         .video-card {
-            background: #1a1a2e;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid #2a2a4a;
-            transition: all 0.3s;
-            cursor: pointer;
+            background: #1a1a2e; border-radius: 16px; overflow: hidden;
+            border: 1px solid #2a2a4a; transition: all 0.3s; cursor: pointer;
         }
-
         .video-card:hover {
-            transform: translateY(-4px);
-            border-color: #667eea;
-            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.15);
+            transform: translateY(-4px); border-color: #667eea;
+            box-shadow: 0 8px 30px rgba(102,126,234,0.15);
         }
-
         .video-thumbnail {
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #0f0f1a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
+            width: 100%; aspect-ratio: 16/9; background: #0f0f1a;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
         }
-
-        .video-thumbnail video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
+        .video-thumbnail video { width: 100%; height: 100%; object-fit: cover; }
         .play-icon {
-            position: absolute;
-            width: 56px;
-            height: 56px;
-            background: rgba(102, 126, 234, 0.9);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            transition: all 0.3s;
-            pointer-events: none;
+            position: absolute; width: 56px; height: 56px;
+            background: rgba(102,126,234,0.9); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; transition: all 0.3s; pointer-events: none;
         }
-
-        .video-card:hover .play-icon {
-            transform: scale(1.1);
-            background: rgba(102, 126, 234, 1);
-        }
-
-        .video-info {
-            padding: 1rem 1.2rem;
-        }
-
+        .video-card:hover .play-icon { transform: scale(1.1); background: rgba(102,126,234,1); }
+        .video-info { padding: 1rem 1.2rem; }
         .video-title {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.4rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-
         .video-desc {
-            color: #8888aa;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            color: #8888aa; font-size: 0.85rem; margin-bottom: 0.5rem;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-
         .video-meta {
-            color: #555577;
-            font-size: 0.8rem;
-            display: flex;
-            justify-content: space-between;
+            color: #555577; font-size: 0.8rem; display: flex; justify-content: space-between;
+        }
+        .uploader-tag {
+            display: inline-block; padding: 0.1rem 0.5rem; border-radius: 8px;
+            font-size: 0.75rem; background: rgba(102,126,234,0.15); color: #8899dd;
         }
 
-        /* Modal */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 1000; align-items: center;
+            justify-content: center; padding: 2rem;
         }
-
-        .modal-overlay.visible {
-            display: flex;
-        }
-
+        .modal-overlay.visible { display: flex; }
         .modal-content {
-            width: 100%;
-            max-width: 900px;
-            background: #1a1a2e;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid #2a2a4a;
+            width: 100%; max-width: 900px; background: #1a1a2e;
+            border-radius: 16px; overflow: hidden; border: 1px solid #2a2a4a;
         }
-
-        .modal-video {
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #000;
-        }
-
-        .modal-video video {
-            width: 100%;
-            height: 100%;
-        }
-
-        .modal-info {
-            padding: 1.5rem;
-        }
-
-        .modal-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .modal-desc {
-            color: #8888aa;
-            margin-bottom: 0.75rem;
-            line-height: 1.5;
-        }
-
-        .modal-meta {
-            color: #555577;
-            font-size: 0.85rem;
-        }
-
+        .modal-video { width: 100%; aspect-ratio: 16/9; background: #000; }
+        .modal-video video { width: 100%; height: 100%; }
+        .modal-info { padding: 1.5rem; }
+        .modal-title { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .modal-desc { color: #8888aa; margin-bottom: 0.75rem; line-height: 1.5; }
+        .modal-meta { color: #555577; font-size: 0.85rem; }
         .modal-close {
-            position: fixed;
-            top: 1.5rem;
-            right: 1.5rem;
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            z-index: 1001;
+            position: fixed; top: 1.5rem; right: 1.5rem; width: 40px; height: 40px;
+            background: rgba(255,255,255,0.1); border: none; border-radius: 50%;
+            color: white; font-size: 1.2rem; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; transition: all 0.3s; z-index: 1001;
         }
+        .modal-close:hover { background: rgba(255,255,255,0.2); }
 
-        .modal-close:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #555577;
-        }
-
-        .empty-state .empty-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .empty-state h3 {
-            margin-bottom: 0.5rem;
-            color: #8888aa;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #8888aa;
-        }
-
+        .empty-state { text-align: center; padding: 4rem 2rem; color: #555577; }
+        .empty-state .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+        .empty-state h3 { margin-bottom: 0.5rem; color: #8888aa; }
+        .loading { text-align: center; padding: 2rem; color: #8888aa; }
         .loading-spinner {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #2a2a4a;
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            display: inline-block; width: 30px; height: 30px; border: 3px solid #2a2a4a;
+            border-top-color: #667eea; border-radius: 50%; animation: spin 0.8s linear infinite;
             margin-bottom: 0.5rem;
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .toast {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            background: #1a1a2e;
-            border: 1px solid #2a2a4a;
-            color: #e0e0e0;
-            font-size: 0.9rem;
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 2000;
-            max-width: 400px;
+            position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.5rem;
+            border-radius: 12px; background: #1a1a2e; border: 1px solid #2a2a4a;
+            color: #e0e0e0; font-size: 0.9rem; transform: translateY(100px);
+            opacity: 0; transition: all 0.3s; z-index: 2000; max-width: 400px;
         }
-
-        .toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .toast.error {
-            border-color: #e74c3c;
-        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.error { border-color: #e74c3c; }
 
         @media (max-width: 600px) {
-            .config-row {
-                grid-template-columns: 1fr;
-            }
-            .video-grid {
-                grid-template-columns: 1fr;
-            }
-            .header {
-                padding: 1rem;
-            }
-            .container {
-                padding: 0 1rem;
-            }
-            .modal-overlay {
-                padding: 0;
-            }
-            .modal-content {
-                border-radius: 0;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }
+            .video-grid { grid-template-columns: 1fr; }
+            .header { padding: 1rem; }
+            .container { padding: 0 1rem; }
+            .modal-overlay { padding: 0; }
+            .modal-content { border-radius: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🎬 视频观看端</h1>
-        <div class="nav-links">
-            <a href="view.html" class="active">观看</a>
+        <div class="header-right">
+            <span class="user-badge" id="userBadge"></span>
+            <button class="logout-btn" id="logoutBtn" onclick="logout()">退出</button>
+            <div class="nav-links">
+                <a href="view.html" class="active">观看</a>
+            </div>
         </div>
     </div>
 
@@ -491,7 +188,6 @@
         <div class="search-bar content-locked">
             <input type="text" id="searchInput" placeholder="搜索视频..." oninput="filterVideos()">
         </div>
-
         <div id="videoGrid" class="video-grid content-locked">
             <div class="empty-state">
                 <div class="empty-icon">📺</div>
@@ -501,12 +197,14 @@
         </div>
     </div>
 
-    <!-- Key Modal -->
+    <!-- Login Modal -->
     <div class="key-modal-overlay" id="keyModal">
         <div class="key-modal">
-            <h3>🔐 请输入访问密钥</h3>
-            <input type="password" id="accessKey" placeholder="访问密钥" onkeydown="if(event.key==='Enter')checkKey()">
-            <button class="btn btn-primary" onclick="checkKey()">进入</button>
+            <h3>🔐 副管理员登录</h3>
+            <p class="subtitle">请输入您的账号和密码</p>
+            <input type="text" id="loginUser" placeholder="账号名称" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+            <input type="password" id="loginPass" placeholder="登录密码" onkeydown="if(event.key==='Enter')checkLogin()">
+            <button class="btn btn-primary" onclick="checkLogin()">登录</button>
         </div>
     </div>
 
@@ -528,202 +226,162 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        const _p1 = 'Z2hw', _p2 = 'XzdSNm0xamdINTdK', _p3 = 'ZFlsUmpyQllDM2k5', _p4 = 'aVRvYTFNNDByNFNlRg==';
-        const _tk = atob(_p1 + _p2 + _p3 + _p4);
-        let config = { user: 'wlbaaa', repo: 'video-hub', token: _tk };
-        let allVideos = [];
+        const _p1='Z2hw',_p2='XzdSNm0xamdINTdK',_p3='ZFlsUmpyQllDM2k5',_p4='aVRvYTFNNDByNFNlRg==';
+        const _tk=atob(_p1+_p2+_p3+_p4);
+        let config={user:'wlbaaa',repo:'video-hub',token:_tk};
+        let allVideos=[];
+        let currentUser=null;
 
-        function checkKey() {
-            const key = document.getElementById('accessKey').value.trim();
-            if (key === 'wlbnb666') {
-                unlock();
-            } else {
-                showToast('访问密钥错误', 'error');
+        async function sha256(msg){
+            const buf=new TextEncoder().encode(msg);
+            const hash=await crypto.subtle.digest('SHA-256',buf);
+            return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+        }
+
+        async function checkLogin(){
+            const username=document.getElementById('loginUser').value.trim();
+            const password=document.getElementById('loginPass').value.trim();
+            if(!username||!password){showToast('请填写账号和密码','error');return;}
+
+            try{
+                const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json');
+                const adminsData=JSON.parse(decodeBase64(data.content));
+                const subAdmins=adminsData.sub_admins||[];
+
+                const hash=await sha256(password);
+                const admin=subAdmins.find(a=>a.username===username&&a.password_hash===hash);
+
+                if(admin){
+                    currentUser=admin.username;
+                    unlock();
+                }else{
+                    showToast('账号或密码错误','error');
+                }
+            }catch(e){
+                showToast('登录失败: 无法连接服务器','error');
             }
         }
 
-        function unlock() {
+        function unlock(){
             document.getElementById('keyModal').classList.add('hidden');
             document.getElementById('mainContainer').classList.add('content-unlocked');
+            document.getElementById('userBadge').textContent='👤 '+currentUser;
+            document.getElementById('userBadge').classList.add('visible');
+            document.getElementById('logoutBtn').classList.add('visible');
             validateToken();
         }
 
-        // Close modal on overlay click
-        document.getElementById('videoModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) closeModal();
-        });
+        function logout(){
+            currentUser=null;
+            allVideos=[];
+            document.getElementById('mainContainer').classList.remove('content-unlocked');
+            document.getElementById('keyModal').classList.remove('hidden');
+            document.getElementById('userBadge').classList.remove('visible');
+            document.getElementById('logoutBtn').classList.remove('visible');
+            document.getElementById('loginUser').value='';
+            document.getElementById('loginPass').value='';
+            document.getElementById('videoGrid').innerHTML='<div class="empty-state"><div class="empty-icon">📺</div><h3>暂无视频</h3><p>请登录后查看</p></div>';
+        }
 
-        // Close modal on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal();
-        });
+        document.getElementById('videoModal').addEventListener('click',(e)=>{if(e.target===e.currentTarget)closeModal();});
+        document.addEventListener('keydown',(e)=>{if(e.key==='Escape')closeModal();});
 
-        async function validateToken() {
-            try {
-                await githubAPI(`/repos/${config.user}/${config.repo}`);
-                showToast('加载中...', 'success');
+        async function validateToken(){
+            try{
+                await githubAPI('/repos/'+config.user+'/'+config.repo);
+                showToast('欢迎, '+currentUser,'success');
                 loadVideos();
-            } catch (error) {
-                showToast('连接失败: ' + error.message, 'error');
+            }catch(error){
+                showToast('连接失败: '+error.message,'error');
             }
         }
 
-        async function loadVideos() {
-            const grid = document.getElementById('videoGrid');
-            grid.innerHTML = `
-                <div class="loading" style="grid-column: 1/-1;">
-                    <div class="loading-spinner"></div>
-                    <div>正在加载视频列表...</div>
-                </div>
-            `;
-
-            try {
-                allVideos = await getVideos();
+        async function loadVideos(){
+            const grid=document.getElementById('videoGrid');
+            grid.innerHTML='<div class="loading" style="grid-column:1/-1;"><div class="loading-spinner"></div><div>正在加载视频列表...</div></div>';
+            try{
+                allVideos=await getVideos();
                 renderVideos(allVideos);
-            } catch (e) {
-                grid.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1;">
-                        <div class="empty-icon">⚠️</div>
-                        <h3>加载失败</h3>
-                        <p>请检查配置是否正确</p>
-                    </div>
-                `;
+            }catch(e){
+                grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">⚠️</div><h3>加载失败</h3><p>请检查配置</p></div>';
             }
         }
 
-        function renderVideos(videos) {
-            const grid = document.getElementById('videoGrid');
-
-            if (videos.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1;">
-                        <div class="empty-icon">📺</div>
-                        <h3>暂无视频</h3>
-                        <p>去上传页面添加一些视频吧</p>
-                    </div>
-                `;
+        function renderVideos(videos){
+            const grid=document.getElementById('videoGrid');
+            if(videos.length===0){
+                grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">📺</div><h3>暂无视频</h3><p>去上传页面添加一些视频吧</p></div>';
                 return;
             }
-
-            grid.innerHTML = videos.map(v => {
-                const videoUrl = `https://raw.githubusercontent.com/${config.user}/${config.repo}/main/${v.path}`;
-                return `
-                    <div class="video-card" onclick="playVideo('${v.id}')">
-                        <div class="video-thumbnail">
-                            <video src="${videoUrl}#t=1" muted preload="metadata"></video>
-                            <div class="play-icon">▶</div>
-                        </div>
-                        <div class="video-info">
-                            <div class="video-title">${escapeHtml(v.title)}</div>
-                            <div class="video-desc">${escapeHtml(v.description || '无描述')}</div>
-                            <div class="video-meta">
-                                <span>${formatSize(v.size)}</span>
-                                <span>${formatDate(v.uploadDate)}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
+            grid.innerHTML=videos.map(v=>{
+                const videoUrl='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+v.path;
+                return '<div class="video-card" onclick="playVideo(\''+v.id+'\')">'+
+                    '<div class="video-thumbnail">'+
+                    '<video src="'+videoUrl+'#t=1" muted preload="metadata"></video>'+
+                    '<div class="play-icon">▶</div></div>'+
+                    '<div class="video-info">'+
+                    '<div class="video-title">'+escapeHtml(v.title)+'</div>'+
+                    '<div class="video-desc">'+escapeHtml(v.description||'无描述')+'</div>'+
+                    '<div class="video-meta">'+
+                    '<span>'+formatSize(v.size)+'</span>'+
+                    '<span class="uploader-tag">📹 '+escapeHtml(v.uploaded_by||'管理员')+'</span>'+
+                    '<span>'+formatDate(v.uploadDate)+'</span></div></div></div>';
             }).join('');
         }
 
-        function filterVideos() {
-            const query = document.getElementById('searchInput').value.trim().toLowerCase();
-            if (!query) {
-                renderVideos(allVideos);
-                return;
-            }
-            const filtered = allVideos.filter(v =>
-                v.title.toLowerCase().includes(query) ||
-                (v.description && v.description.toLowerCase().includes(query))
-            );
+        function filterVideos(){
+            const query=document.getElementById('searchInput').value.trim().toLowerCase();
+            if(!query){renderVideos(allVideos);return;}
+            const filtered=allVideos.filter(v=>v.title.toLowerCase().includes(query)||(v.description&&v.description.toLowerCase().includes(query)));
             renderVideos(filtered);
         }
 
-        function playVideo(id) {
-            const video = allVideos.find(v => v.id === id);
-            if (!video) return;
-
-            const videoUrl = `https://raw.githubusercontent.com/${config.user}/${config.repo}/main/${video.path}`;
-            const modal = document.getElementById('videoModal');
-            const player = document.getElementById('modalPlayer');
-
-            document.getElementById('modalTitle').textContent = video.title;
-            document.getElementById('modalDesc').textContent = video.description || '';
-            document.getElementById('modalMeta').textContent =
-                `${formatSize(video.size)} · ${new Date(video.uploadDate).toLocaleString('zh-CN')}`;
-
-            player.src = videoUrl;
+        function playVideo(id){
+            const video=allVideos.find(v=>v.id===id);
+            if(!video)return;
+            const videoUrl='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+video.path;
+            const modal=document.getElementById('videoModal');
+            const player=document.getElementById('modalPlayer');
+            document.getElementById('modalTitle').textContent=video.title;
+            document.getElementById('modalDesc').textContent=video.description||'';
+            document.getElementById('modalMeta').textContent=formatSize(video.size)+' · '+
+                new Date(video.uploadDate).toLocaleString('zh-CN')+' · 上传者: '+(video.uploaded_by||'管理员');
+            player.src=videoUrl;
             modal.classList.add('visible');
-            player.play().catch(() => {});
+            player.play().catch(()=>{});
         }
 
-        function closeModal() {
-            const modal = document.getElementById('videoModal');
-            const player = document.getElementById('modalPlayer');
-            player.pause();
-            player.src = '';
+        function closeModal(){
+            const modal=document.getElementById('videoModal');
+            const player=document.getElementById('modalPlayer');
+            player.pause();player.src='';
             modal.classList.remove('visible');
         }
 
-        async function githubAPI(endpoint, options = {}) {
-            const url = `https://api.github.com${endpoint}`;
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    'Authorization': `token ${config.token}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json',
-                    ...(options.headers || {})
-                }
-            });
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP ${response.status}`);
-            }
+        async function githubAPI(endpoint,options={}){
+            const url='https://api.github.com'+endpoint;
+            const response=await fetch(url,{...options,headers:{
+                'Authorization':'token '+config.token,
+                'Accept':'application/vnd.github.v3+json',
+                'Content-Type':'application/json',
+                ...(options.headers||{})
+            }});
+            if(!response.ok){const ed=await response.json().catch(()=>({}));throw new Error(ed.message||'HTTP '+response.status);}
             return response.json();
         }
 
-        async function getVideos() {
-            try {
-                const data = await githubAPI(`/repos/${config.user}/${config.repo}/contents/videos.json`);
-                const json = decodeBase64(data.content);
-                return JSON.parse(json);
-            } catch (e) {
-                return [];
-            }
+        async function getVideos(){
+            try{
+                const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');
+                return JSON.parse(decodeBase64(data.content));
+            }catch(e){return [];}
         }
 
-        function decodeBase64(str) {
-            return decodeURIComponent(escape(atob(str.replace(/\n/g, ''))));
-        }
-
-        function formatSize(bytes) {
-            if (!bytes || bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-        }
-
-        function formatDate(isoStr) {
-            if (!isoStr) return '';
-            const d = new Date(isoStr);
-            return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-
-        function showToast(message, type = '') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = `toast ${type} show`;
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
+        function decodeBase64(str){return decodeURIComponent(escape(atob(str.replace(/\n/g,''))));}
+        function formatSize(b){if(!b||b===0)return'0 B';const k=1024;const s=['B','KB','MB','GB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i];}
+        function formatDate(isoStr){if(!isoStr)return'';const d=new Date(isoStr);return d.toLocaleDateString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit'});}
+        function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+        function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000);}
     </script>
 </body>
 </html>
