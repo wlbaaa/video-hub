@@ -232,6 +232,29 @@
         .comment-empty { text-align: center; color: #555577; padding: 1rem; font-size: 0.85rem; }
         .comment-login-hint { text-align: center; color: #555577; padding: 0.5rem; font-size: 0.8rem; }
 
+        /* Upload Panel */
+        .upload-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); z-index: 2000; align-items: center;
+            justify-content: center; padding: 1rem;
+        }
+        .upload-overlay.visible { display: flex; }
+        .upload-panel {
+            background: #1a1a2e; border-radius: 16px; border: 1px solid #2a2a4a;
+            width: 100%; max-width: 420px; padding: 1.5rem;
+        }
+        .upload-panel h3 { margin-bottom: 1rem; font-size: 1.1rem; }
+        .upload-panel .up-area {
+            border: 2px dashed #2a2a4a; border-radius: 12px; padding: 1.5rem;
+            text-align: center; cursor: pointer; margin-bottom: 1rem; transition: border-color 0.3s;
+        }
+        .upload-panel .up-area:hover { border-color: #667eea; }
+        .upload-panel .up-area .up-icon { font-size: 2rem; margin-bottom: 0.3rem; }
+        .upload-panel .up-area p { color: #8888aa; font-size: 0.85rem; }
+        .up-bar { height: 6px; background: #2a2a4a; border-radius: 3px; overflow: hidden; margin: 0.5rem 0; display: none; }
+        .up-bar .up-fill { height: 100%; background: linear-gradient(90deg,#667eea,#764ba2); width: 0; transition: width 0.3s; }
+        .up-status { color: #555577; font-size: 0.8rem; display: none; }
+
         .empty-state { text-align: center; padding: 4rem 2rem; color: #555577; }
         .empty-state .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
         .empty-state h3 { margin-bottom: 0.5rem; color: #8888aa; }
@@ -363,6 +386,29 @@
                     </div>
                     <div class="comment-login-hint" id="commentLoginHint">请先登录再发表评论</div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Panel -->
+    <div class="upload-overlay" id="uploadOverlay">
+        <div class="upload-panel">
+            <h3>创建作品</h3>
+            <div class="up-area" id="upDropArea">
+                <div class="up-icon">📹</div>
+                <p>点击或拖拽视频到此上传</p>
+                <input type="file" id="upFileInput" accept="video/*" style="display:none">
+            </div>
+            <div class="form-group" style="margin-bottom:0.5rem">
+                <label>标题</label><input type="text" id="upTitle" placeholder="输入视频标题">
+            </div>
+            <div class="form-group" style="margin-bottom:0.5rem">
+                <label>描述</label><textarea id="upDesc" placeholder="输入视频描述（可选）" style="resize:vertical;min-height:50px"></textarea>
+            </div>
+            <div class="up-bar" id="upBar"><div class="up-fill" id="upFill"></div></div>
+            <div class="up-status" id="upStatus"></div>
+            <div style="display:flex;gap:0.5rem;margin-top:0.8rem">
+                <button class="btn btn-ghost btn-sm" onclick="closeUploadPanel()">取消</button>
             </div>
         </div>
     </div>
@@ -719,6 +765,88 @@
             return d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
         }
 
+        // ────── Upload Panel ──────
+        function openUploadPanel(){
+            if(!currentUser){ showToast('请先登录'); return; }
+            document.getElementById('uploadOverlay').classList.add('visible');
+            document.getElementById('upFileInput').value='';
+            document.getElementById('upTitle').value='';
+            document.getElementById('upDesc').value='';
+            document.getElementById('upBar').style.display='none';
+            document.getElementById('upStatus').style.display='none';
+        }
+        function closeUploadPanel(){
+            document.getElementById('uploadOverlay').classList.remove('visible');
+        }
+        document.addEventListener('DOMContentLoaded',function(){
+            const dropArea=document.getElementById('upDropArea');
+            const fileInput=document.getElementById('upFileInput');
+            dropArea.addEventListener('click',function(){ fileInput.click(); });
+            dropArea.addEventListener('dragover',function(e){ e.preventDefault(); dropArea.style.borderColor='#667eea'; });
+            dropArea.addEventListener('dragleave',function(){ dropArea.style.borderColor='#2a2a4a'; });
+            dropArea.addEventListener('drop',function(e){ e.preventDefault(); dropArea.style.borderColor='#2a2a4a'; handleUploadFile(e.dataTransfer.files[0]); });
+            fileInput.addEventListener('change',function(){ handleUploadFile(fileInput.files[0]); });
+            document.getElementById('uploadOverlay').addEventListener('click',function(e){ if(e.target===this) closeUploadPanel(); });
+        });
+        function handleUploadFile(file){
+            if(!file){ return; }
+            if(!/^video\//.test(file.type)){ showToast('请选择视频文件'); return; }
+            if(file.size>100*1024*1024){ showToast('视频不能超过 100MB'); return; }
+            document.getElementById('upStatus').style.display='block';
+            document.getElementById('upStatus').textContent='编码中... ('+formatSize(file.size)+')';
+            document.getElementById('upBar').style.display='block';
+            document.getElementById('upFill').style.width='20%';
+            const reader=new FileReader();
+            reader.onprogress=function(e){ if(e.lengthComputable){ document.getElementById('upFill').style.width=Math.min(90,20+(e.loaded/e.total)*70)+'%'; } };
+            reader.onload=async function(){
+                document.getElementById('upFill').style.width='95%';
+                document.getElementById('upStatus').textContent='上传中...';
+                try{
+                    const base64=reader.result.split(',')[1];
+                    const timestamp=new Date().toISOString();
+                    const videoId='v_'+Date.now();
+                    const shaVal=await sha256(file.name+timestamp);
+                    const newVideo={
+                        id:videoId,
+                        title:document.getElementById('upTitle').value.trim()||file.name.replace(/\.[^.]+$/,''),
+                        description:document.getElementById('upDesc').value.trim()||'',
+                        filename:file.name,
+                        size:file.size,
+                        uploaded_by:currentUser,
+                        sha:shaVal.substring(0,16),
+                        created_at:timestamp,
+                        path:'videos/'+videoId+'.'+file.name.split('.').pop()
+                    };
+                    // Upload video file
+                    await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/'+newVideo.path,{
+                        method:'PUT',
+                        body:JSON.stringify({message:'upload: '+newVideo.title,content:base64})
+                    });
+                    // Update videos.json
+                    let vData=await getVideosData();
+                    vData.videos=vData.videos||[];
+                    vData.videos.unshift(newVideo);
+                    await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json',{
+                        method:'PUT',
+                        body:JSON.stringify({message:'update videos.json',content:btoa(unescape(encodeURIComponent(JSON.stringify(vData,null,2)))),sha:(await getVideosSha())})
+                    });
+                    document.getElementById('upFill').style.width='100%';
+                    document.getElementById('upStatus').textContent='上传成功!';
+                    setTimeout(function(){ closeUploadPanel(); allVideos.unshift(newVideo); renderVideos(); },800);
+                }catch(e){
+                    document.getElementById('upStatus').textContent='上传失败: '+e.message;
+                    document.getElementById('upFill').style.background='#f44';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        async function getVideosSha(){
+            try{ const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json'); return r.sha; }catch(e){ return null; }
+        }
+        async function getVideosData(){
+            try{ const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json'); return JSON.parse(decodeBase64(r.content)); }catch(e){ return {videos:[]}; }
+        }
+
         async function githubAPI(endpoint,options){
             options=options||{};
             var headers={
@@ -750,8 +878,8 @@
         checkAutoLogin();
     </script>
     <div class="bottom-nav">
-        <a href="upload.html"><span class="bn-icon">📹</span>创建作品</a>
-        <a href="index.html"><span class="bn-icon">👤</span>我的</a>
+        <a href="publish.html"><span class="bn-icon">📹</span>创作</a>
+        <a href="my.html"><span class="bn-icon">👤</span>我的</a>
         <a href="view.html" class="active"><span class="bn-icon">🔥</span>推荐</a>
     </div>
 </body>
