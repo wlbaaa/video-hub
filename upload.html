@@ -507,19 +507,20 @@
 
     <script>
         let selectedFile = null;
-        let config = { user: '', repo: '', token: '' };
+        let config = { user: 'wlbaaa', repo: 'video-hub', token: '' };
 
-        // Load saved config
+        // Load saved token only
         window.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('videoHubConfig');
-            if (saved) {
-                config = JSON.parse(saved);
-                document.getElementById('githubUser').value = config.user || '';
-                document.getElementById('githubRepo').value = config.repo || '';
-                document.getElementById('githubToken').value = config.token || '';
-                if (config.token && config.user && config.repo) {
-                    validateToken();
-                }
+            // Always use fixed user/repo
+            document.getElementById('githubUser').value = 'wlbaaa';
+            document.getElementById('githubRepo').value = 'video-hub';
+
+            // Load only token from localStorage
+            const savedToken = localStorage.getItem('videoHubToken');
+            if (savedToken) {
+                config.token = savedToken;
+                document.getElementById('githubToken').value = savedToken;
+                validateToken();
             }
         });
 
@@ -736,7 +737,7 @@
                 await githubAPI(`/repos/${user}/${repo}`);
                 document.getElementById('statusBadge').className = 'status-badge connected';
                 document.getElementById('statusText').textContent = '已连接';
-                localStorage.setItem('videoHubConfig', JSON.stringify(config));
+                localStorage.setItem('videoHubToken', config.token);
                 showToast('连接成功！', 'success');
                 refreshVideoList();
             } catch (error) {
