@@ -66,27 +66,45 @@
             padding: 0 1.5rem;
         }
 
-        .config-panel {
+        .key-panel {
             background: #1a1a2e;
             border-radius: 16px;
-            padding: 1.5rem;
+            padding: 2rem;
             margin-bottom: 2rem;
             border: 1px solid #2a2a4a;
+            text-align: center;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .config-panel h3 {
-            margin-bottom: 1rem;
+        .key-panel h3 {
+            margin-bottom: 1.5rem;
             color: #a0a0c0;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-size: 1rem;
         }
 
-        .config-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+        .key-panel input {
+            width: 100%;
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 0.9rem 1rem;
+            color: #e0e0e0;
+            font-size: 1rem;
+            text-align: center;
+            letter-spacing: 2px;
+            outline: none;
+            transition: border-color 0.3s;
             margin-bottom: 1rem;
+        }
+
+        .key-panel input:focus {
+            border-color: #667eea;
+        }
+
+        .container:not(.content-unlocked) .content-locked {
+            display: none !important;
         }
 
         .input-group {
@@ -456,37 +474,18 @@
         </div>
     </div>
 
-    <div class="container">
-        <div class="config-panel">
-            <h3>
-                GitHub 配置
-                <span id="statusBadge" class="status-badge disconnected">
-                    <span class="status-dot"></span>
-                    <span id="statusText">未连接</span>
-                </span>
-            </h3>
-            <div class="config-row">
-                <div class="input-group">
-                    <label>GitHub 用户名</label>
-                    <input type="text" id="githubUser" value="wlbaaa" readonly style="opacity:0.6;cursor:not-allowed;">
-                </div>
-                <div class="input-group">
-                    <label>仓库名称</label>
-                    <input type="text" id="githubRepo" value="video-hub" readonly style="opacity:0.6;cursor:not-allowed;">
-                </div>
-            </div>
-            <div class="input-group" style="margin-bottom: 1rem;">
-                <label>Personal Access Token</label>
-                <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx">
-            </div>
-            <button class="btn btn-primary" onclick="validateToken()">连接验证</button>
+    <div class="container" id="mainContainer">
+        <div class="key-panel" id="keyPanel">
+            <h3>🔐 请输入访问密钥</h3>
+            <input type="password" id="accessKey" placeholder="访问密钥" onkeydown="if(event.key==='Enter')checkKey()">
+            <button class="btn btn-primary" onclick="checkKey()">进入</button>
         </div>
 
-        <div class="search-bar">
+        <div class="search-bar content-locked">
             <input type="text" id="searchInput" placeholder="搜索视频..." oninput="filterVideos()">
         </div>
 
-        <div id="videoGrid" class="video-grid">
+        <div id="videoGrid" class="video-grid content-locked">
             <div class="empty-state">
                 <div class="empty-icon">📺</div>
                 <h3>暂无视频</h3>
@@ -518,13 +517,29 @@
         let config = { user: 'wlbaaa', repo: 'video-hub', token: _tk };
         let allVideos = [];
 
-        // Auto-connect on load
+        // Check saved key
         window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('githubUser').value = 'wlbaaa';
-            document.getElementById('githubRepo').value = 'video-hub';
-            document.getElementById('githubToken').value = _tk;
-            validateToken();
+            const savedKey = localStorage.getItem('videoHubKey');
+            if (savedKey === 'wlbnb666') {
+                unlock();
+            }
         });
+
+        function checkKey() {
+            const key = document.getElementById('accessKey').value.trim();
+            if (key === 'wlbnb666') {
+                localStorage.setItem('videoHubKey', key);
+                unlock();
+            } else {
+                showToast('访问密钥错误', 'error');
+            }
+        }
+
+        function unlock() {
+            document.getElementById('keyPanel').style.display = 'none';
+            document.getElementById('mainContainer').classList.add('content-unlocked');
+            validateToken();
+        }
 
         // Close modal on overlay click
         document.getElementById('videoModal').addEventListener('click', (e) => {
