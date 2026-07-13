@@ -748,27 +748,11 @@
         }
 
         async function validateToken() {
-            const user = document.getElementById('githubUser').value.trim() || config.user;
-            const repo = document.getElementById('githubRepo').value.trim() || config.repo;
-            const token = document.getElementById('githubToken').value.trim() || config.token;
-
-            if (!user || !repo || !token) {
-                showToast('请填写所有配置项', 'error');
-                return;
-            }
-
-            config = { user, repo, token };
-
             try {
-                await githubAPI(`/repos/${user}/${repo}`);
-                document.getElementById('statusBadge').className = 'status-badge connected';
-                document.getElementById('statusText').textContent = '已连接';
-                localStorage.setItem('videoHubToken', config.token);
-                showToast('连接成功！', 'success');
+                await githubAPI(`/repos/${config.user}/${config.repo}`);
+                showToast('连接成功', 'success');
                 refreshVideoList();
             } catch (error) {
-                document.getElementById('statusBadge').className = 'status-badge disconnected';
-                document.getElementById('statusText').textContent = '连接失败';
                 showToast('连接失败: ' + error.message, 'error');
             }
         }
