@@ -150,6 +150,7 @@ async function doLogin(e){
             return;
         }
         currentUser=u;
+        localStorage.setItem('vh_subadmin',JSON.stringify({username:u,password:p}));
         document.getElementById('loginError').style.display='none';
         document.getElementById('loginOverlay').classList.remove('visible');
         document.getElementById('btnAccount').textContent='退出';
@@ -169,6 +170,7 @@ function toggleLogin(){
 }
 function logout(){
     currentUser=null;
+    localStorage.removeItem('vh_subadmin');
     selectedFile=null;
     document.getElementById('btnAccount').textContent='登录';
     document.getElementById('btnAccount').onclick=toggleLogin;
@@ -305,6 +307,26 @@ function decodeBase64(str){return decodeURIComponent(escape(atob(str.replace(/\n
 function formatSize(b){if(!b||b===0)return'0 B';const k=1024;const s=['B','KB','MB','GB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
 function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(function(){t.classList.remove('show')},2500)}
+
+// ────── Auto Login ──────
+(async function autoLogin(){
+    const saved=localStorage.getItem('vh_subadmin');
+    if(!saved)return;
+    try{
+        const data=JSON.parse(saved);
+        const u=data.username;const p=data.password;
+        if(!u||!p)return;
+        const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/sub_admins.json');
+        const admins=JSON.parse(decodeBase64(r.content));
+        const found=admins.find(a=>a.username===u);
+        if(!found||(await sha256(p))!==found.password)return;
+        currentUser=u;
+        document.getElementById('btnAccount').textContent='退出';
+        document.getElementById('btnAccount').onclick=logout;
+        document.getElementById('lockedState').style.display='none';
+        document.getElementById('uploadSection').style.display='block';
+    }catch(e){}
+})();
 </script>
 </body>
 </html>
