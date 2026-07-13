@@ -3,99 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Hub - 登录</title>
+    <title>Video Hub</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             background: #0f0f1a; color: #e0e0e0; min-height: 100vh;
-            display: flex; align-items: center; justify-content: center;
         }
-        .container { width: 100%; max-width: 400px; padding: 2rem; }
+        .page {
+            display: flex; flex-direction: column; min-height: 100vh;
+        }
+        .main {
+            flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem 1.5rem;
+        }
+        .container { text-align: center; max-width: 600px; width: 100%; }
         .logo {
-            font-size: 2.5rem; margin-bottom: 0.3rem; text-align: center; font-weight: 700;
+            font-size: 2.5rem; margin-bottom: 0.3rem; font-weight: 700;
             background: linear-gradient(135deg, #667eea, #764ba2);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-        .subtitle { color: #8888aa; margin-bottom: 2rem; font-size: 0.95rem; text-align: center; }
-        .tabs {
-            display: flex; gap: 0; margin-bottom: 1.5rem;
-            background: #1a1a2e; border-radius: 12px; padding: 0.3rem;
+        .subtitle { color: #8888aa; margin-bottom: 2.5rem; font-size: 0.95rem; }
+        .cards { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; }
+        .card {
+            background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 16px;
+            padding: 2rem 1.5rem; width: 220px; text-align: center; cursor: pointer;
+            transition: all 0.3s; text-decoration: none; color: #e0e0e0;
         }
-        .tab {
-            flex: 1; padding: 0.7rem; text-align: center; cursor: pointer;
-            border-radius: 10px; font-size: 0.9rem; transition: all 0.3s;
-            color: #8888aa; border: none; background: transparent;
+        .card:hover {
+            transform: translateY(-6px); border-color: #667eea;
+            box-shadow: 0 12px 40px rgba(102,126,234,0.2);
         }
-        .tab.active { background: rgba(102,126,234,0.2); color: #667eea; }
-        .panel { display: none; }
-        .panel.active { display: block; }
+        .card .icon { font-size: 3rem; margin-bottom: 1rem; }
+        .card h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .card p { color: #8888aa; font-size: 0.85rem; line-height: 1.5; }
 
+        .bottom-bar {
+            background: #1a1a2e; border-top: 1px solid #2a2a4a;
+            padding: 0.7rem 2rem; text-align: center;
+        }
+        .bottom-bar a {
+            color: #555577; text-decoration: none; font-size: 0.8rem;
+            transition: color 0.3s;
+        }
+        .bottom-bar a:hover { color: #8899dd; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); z-index: 1000; align-items: center;
+            justify-content: center; padding: 1rem;
+        }
+        .modal-overlay.visible { display: flex; }
+        .modal {
+            background: #1a1a2e; border-radius: 16px; padding: 2rem;
+            border: 1px solid #2a2a4a; max-width: 380px; width: 100%; text-align: left;
+        }
+        .modal h3 { font-size: 1.1rem; margin-bottom: 1.2rem; color: #e0e0e0; text-align: center; }
         .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.4rem; color: #a0a0c0; font-size: 0.85rem; }
+        .form-group label { display: block; margin-bottom: 0.35rem; color: #a0a0c0; font-size: 0.83rem; }
         .form-group input, .form-group textarea {
-            width: 100%; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px;
-            padding: 0.8rem 1rem; color: #e0e0e0; font-size: 0.95rem; outline: none;
+            width: 100%; background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px;
+            padding: 0.75rem 0.9rem; color: #e0e0e0; font-size: 0.9rem; outline: none;
             transition: border-color 0.3s;
         }
-        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-group textarea { min-height: 70px; resize: vertical; }
         .form-group input:focus, .form-group textarea:focus { border-color: #667eea; }
+        .form-group .hint { color: #555577; font-size: 0.72rem; margin-top: 0.25rem; }
 
         .btn {
-            width: 100%; padding: 0.85rem; border: none; border-radius: 10px;
-            font-size: 1rem; cursor: pointer; transition: all 0.3s; font-weight: 500; margin-top: 0.5rem;
+            width: 100%; padding: 0.8rem; border: none; border-radius: 10px;
+            font-size: 0.95rem; cursor: pointer; transition: all 0.3s; font-weight: 500; margin-top: 0.3rem;
         }
         .btn-primary {
             background: linear-gradient(135deg, #667eea, #764ba2); color: white;
         }
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-ghost {
+            width: auto; padding: 0.5rem 1rem; background: none; color: #8888aa;
+            border: 1px solid #2a2a4a; font-size: 0.85rem; margin-top: 0.5rem;
+        }
+        .btn-ghost:hover { color: #ccc; border-color: #667eea; }
+        .modal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
+        .modal-footer a { color: #667eea; text-decoration: none; font-size: 0.85rem; cursor: pointer; }
+        .modal-footer a:hover { text-decoration: underline; }
 
         .status-msg {
-            text-align: center; padding: 1rem; border-radius: 10px; margin-top: 1rem;
-            font-size: 0.9rem; display: none;
+            text-align: center; padding: 0.8rem; border-radius: 8px; margin-top: 0.8rem;
+            font-size: 0.85rem; display: none;
         }
         .status-msg.success { display: block; background: rgba(46,204,113,0.1); color: #2ecc71; border: 1px solid rgba(46,204,113,0.2); }
         .status-msg.error { display: block; background: rgba(231,76,60,0.1); color: #e74c3c; border: 1px solid rgba(231,76,60,0.2); }
         .status-msg.info { display: block; background: rgba(52,152,219,0.1); color: #3498db; border: 1px solid rgba(52,152,219,0.2); }
 
-        .note-text { color: #555577; font-size: 0.75rem; margin-top: 0.3rem; }
-
         @media (max-width: 500px) {
-            .container { padding: 1.5rem 1rem; }
+            .cards { flex-direction: column; align-items: center; }
+            .card { width: 100%; max-width: 280px; }
             .logo { font-size: 2rem; }
+            .modal { margin: 0 0.5rem; padding: 1.5rem; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">Video Hub</div>
-        <div class="subtitle">视频分享与管理平台</div>
-
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('login')">登录</button>
-            <button class="tab" onclick="switchTab('register')">注册</button>
+    <div class="page">
+        <div class="main">
+            <div class="container">
+                <div class="logo">Video Hub</div>
+                <div class="subtitle">视频分享与管理平台</div>
+                <div class="cards">
+                    <div class="card" onclick="openRegister()">
+                        <div class="icon">📝</div>
+                        <h3>注册申请</h3>
+                        <p>提交申请，等待管理员审核通过</p>
+                    </div>
+                    <a href="view.html" class="card">
+                        <div class="icon">🎬</div>
+                        <h3>观看视频</h3>
+                        <p>浏览和播放视频、与管理员私信交流</p>
+                    </a>
+                </div>
+            </div>
         </div>
+        <div class="bottom-bar">
+            <a href="upload.html">开发者登录</a>
+        </div>
+    </div>
 
-        <!-- Login Panel -->
-        <div class="panel active" id="panel-login">
+    <!-- Register Modal -->
+    <div class="modal-overlay" id="regModal" onclick="if(event.target===this)closeModal()">
+        <div class="modal">
+            <h3>📝 注册申请</h3>
             <div class="form-group">
                 <label>用户名</label>
-                <input type="text" id="loginUser" placeholder="请输入用户名" onkeydown="if(event.key==='Enter')handleLogin()">
-            </div>
-            <div class="form-group">
-                <label>密码</label>
-                <input type="password" id="loginPass" placeholder="请输入密码" onkeydown="if(event.key==='Enter')handleLogin()">
-            </div>
-            <button class="btn btn-primary" onclick="handleLogin()">登录</button>
-            <div class="status-msg" id="loginStatus"></div>
-        </div>
-
-        <!-- Register Panel -->
-        <div class="panel" id="panel-register">
-            <div class="form-group">
-                <label>用户名</label>
-                <input type="text" id="regUser" placeholder="设置用户名">
+                <input type="text" id="regUser" placeholder="设置用户名（至少2个字符）">
             </div>
             <div class="form-group">
                 <label>密码</label>
@@ -108,10 +147,17 @@
             <div class="form-group">
                 <label>备注（选填）</label>
                 <textarea id="regNote" placeholder="可以写点自我介绍，或为什么想加入..."></textarea>
-                <p class="note-text">提交后需等待管理员审核通过才能登录</p>
+                <p class="hint">提交后需等待管理员审核通过，届时即可登录观看端</p>
             </div>
             <button class="btn btn-primary" onclick="handleRegister()">提交注册申请</button>
             <div class="status-msg" id="regStatus"></div>
+            <div style="text-align:center;margin-top:0.8rem;">
+                <span style="color:#8888aa;font-size:0.85rem;">已有账号？</span>
+                <a href="view.html" style="color:#667eea;font-size:0.85rem;text-decoration:none;">去登录</a>
+            </div>
+            <div style="text-align:center;margin-top:0.3rem;">
+                <button class="btn btn-ghost" onclick="closeModal()">关闭</button>
+            </div>
         </div>
     </div>
 
@@ -120,25 +166,14 @@
         const _tk=atob(_p1+_p2+_p3+_p4);
         const config={user:'wlbaaa',repo:'video-hub',token:_tk};
 
-        // Auto-redirect if already logged in
-        (function(){
-            const saved=localStorage.getItem('vh_subadmin');
-            if(saved){
-                try{
-                    const d=JSON.parse(saved);
-                    if(d.username){document.getElementById('loginUser').value=d.username;
-                    document.getElementById('loginPass').value=d.password||'';}
-                }catch(e){}
-            }
-        })();
+        document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
-        function switchTab(t){
-            document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-            document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
-            document.querySelector('.tab[onclick*="'+t+'"]').classList.add('active');
-            document.getElementById('panel-'+t).classList.add('active');
-            document.getElementById('loginStatus').className='status-msg';
+        function openRegister(){
+            document.getElementById('regModal').classList.add('visible');
             document.getElementById('regStatus').className='status-msg';
+        }
+        function closeModal(){
+            document.getElementById('regModal').classList.remove('visible');
         }
 
         async function sha256(msg){
@@ -160,42 +195,6 @@
         }
         function decodeBase64(s){return decodeURIComponent(escape(atob(s.replace(/\n/g,''))));}
 
-        async function handleLogin(){
-            const s=document.getElementById('loginStatus');
-            s.className='status-msg';
-            const username=document.getElementById('loginUser').value.trim();
-            const password=document.getElementById('loginPass').value.trim();
-            if(!username||!password){s.className='status-msg error';s.textContent='请填写用户名和密码';return;}
-
-            try{
-                // Check admins.json (approved)
-                const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json');
-                const admins=JSON.parse(decodeBase64(d.content)).sub_admins||[];
-                const hash=await sha256(password);
-                const found=admins.find(a=>a.username===username&&a.password_hash===hash);
-                if(found){
-                    localStorage.setItem('vh_subadmin',JSON.stringify({username:username,password:password}));
-                    window.location.href='view.html';
-                    return;
-                }
-                // Check registrations.json (pending)
-                try{
-                    const r=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/registrations.json');
-                    const regs=JSON.parse(decodeBase64(r.content)).registrations||[];
-                    const pending=regs.find(r=>r.username===username);
-                    if(pending){
-                        s.className='status-msg info';
-                        s.textContent='您的注册申请正在等待管理员审核，请耐心等待~';
-                        return;
-                    }
-                }catch(e){}
-                s.className='status-msg error';
-                s.textContent='用户名或密码错误，或尚未注册';
-            }catch(e){
-                s.className='status-msg error';s.textContent='登录失败: 无法连接服务器';
-            }
-        }
-
         async function handleRegister(){
             const s=document.getElementById('regStatus');
             s.className='status-msg';
@@ -210,7 +209,7 @@
             if(pass!==pass2){s.className='status-msg error';s.textContent='两次密码不一致';return;}
 
             try{
-                // Check if already exists in admins
+                // Check admins
                 try{
                     const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/admins.json');
                     const admins=JSON.parse(decodeBase64(d.content)).sub_admins||[];
@@ -228,26 +227,23 @@
                     sha=r.sha;
                 }catch(e){}
 
-                // Check duplicate pending
                 if((regs.registrations||[]).find(r=>r.username===username)){
                     s.className='status-msg info';s.textContent='您已提交过注册申请，请等待管理员审核';return;
                 }
 
                 const hash=await sha256(pass);
                 regs.registrations.push({
-                    username:username,
-                    password_hash:hash,
-                    note:note||'',
-                    submitted_at:new Date().toISOString()
+                    username:username,password_hash:hash,
+                    note:note||'',submitted_at:new Date().toISOString()
                 });
 
                 const json=btoa(unescape(encodeURIComponent(JSON.stringify(regs,null,2))));
-                const body={message:'Registration from '+username,content:json};
+                const body={message:'Registration: '+username,content:json};
                 if(sha)body.sha=sha;
                 await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/registrations.json',{method:'PUT',body:JSON.stringify(body)});
 
                 s.className='status-msg success';
-                s.textContent='注册申请已提交！请等待管理员审核通过后登录。';
+                s.textContent='注册申请已提交！请等待管理员审核。';
                 document.getElementById('regUser').value='';
                 document.getElementById('regPass').value='';
                 document.getElementById('regPass2').value='';
