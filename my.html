@@ -225,7 +225,8 @@ async function loadMyVideos(){
 async function loadAllVideos(){
     try{
         const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json');
-        allVideos=(JSON.parse(decodeBase64(r.content))).videos||[];
+        allVideos=JSON.parse(decodeBase64(r.content));
+        if(!Array.isArray(allVideos)) allVideos=[];
     }catch(e){allVideos=[]}
 }
 
