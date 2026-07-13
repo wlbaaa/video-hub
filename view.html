@@ -188,6 +188,7 @@
         .modal-content {
             width: 100%; max-width: 900px; background: #1a1a2e;
             border-radius: 16px; overflow: hidden; border: 1px solid #2a2a4a;
+            max-height: 90vh; overflow-y: auto;
         }
         .modal-video { width: 100%; aspect-ratio: 16/9; background: #000; }
         .modal-video video { width: 100%; height: 100%; }
@@ -202,6 +203,24 @@
             align-items: center; justify-content: center; transition: all 0.3s; z-index: 1001;
         }
         .modal-close:hover { background: rgba(255,255,255,0.2); }
+
+        /* Comments */
+        .comment-section { padding: 0 1.5rem 1.5rem; border-top: 1px solid #2a2a4a; }
+        .comment-section h4 { margin: 1rem 0 0.8rem; font-size: 1rem; color: #a0a0c0; }
+        .comment-list { max-height: 250px; overflow-y: auto; margin-bottom: 0.8rem; }
+        .comment-item { padding: 0.6rem 0; border-bottom: 1px solid #1e1e36; }
+        .comment-item:last-child { border-bottom: none; }
+        .comment-user { font-size: 0.85rem; color: #8899dd; margin-bottom: 0.2rem; }
+        .comment-content { font-size: 0.9rem; color: #ccc; line-height: 1.4; }
+        .comment-time { font-size: 0.72rem; color: #555577; margin-top: 0.15rem; }
+        .comment-input-area { display: flex; gap: 0.5rem; }
+        .comment-input-area input {
+            flex: 1; background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px;
+            padding: 0.5rem 0.8rem; color: #e0e0e0; font-size: 0.85rem; outline: none;
+        }
+        .comment-input-area input:focus { border-color: #667eea; }
+        .comment-empty { text-align: center; color: #555577; padding: 1rem; font-size: 0.85rem; }
+        .comment-login-hint { text-align: center; color: #555577; padding: 0.5rem; font-size: 0.8rem; }
 
         .empty-state { text-align: center; padding: 4rem 2rem; color: #555577; }
         .empty-state .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
@@ -228,16 +247,16 @@
             .header { padding: 1rem; }
             .container { padding: 0 1rem; }
             .modal-overlay { padding: 0; }
-            .modal-content { border-radius: 0; min-height: 100vh; }
+            .modal-content { border-radius: 0; min-height: 100vh; max-height: 100vh; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🎬 视频观看端</h1>
+        <h1>视频观看端</h1>
         <div class="header-right" id="headerRight" style="display:none;">
             <span class="user-badge" id="userBadge"></span>
-            <button class="msg-btn" id="msgBtn" onclick="toggleChat()">💬 消息<span class="dot" id="msgDot"></span></button>
+            <button class="msg-btn" id="msgBtn" onclick="toggleChat()">消息<span class="dot" id="msgDot"></span></button>
             <button class="logout-btn" onclick="logout()">退出</button>
         </div>
         <div class="nav-links">
@@ -262,7 +281,7 @@
     <!-- Login Modal -->
     <div class="key-modal-overlay" id="keyModal">
         <div class="key-modal">
-            <h3>🔐 副管理员登录</h3>
+            <h3>副管理员登录</h3>
             <p class="subtitle">请输入您的账号和密码</p>
             <p class="auto-hint" id="autoHint">检测到上次登录，正在自动登录...</p>
             <input type="text" id="loginUser" placeholder="账号名称">
@@ -279,7 +298,7 @@
     <div class="chat-overlay" id="chatOverlay">
         <div class="chat-panel">
             <div class="chat-header">
-                <h3>💬 消息中心</h3>
+                <h3>消息中心</h3>
                 <button class="btn btn-ghost btn-sm" onclick="toggleChat()">关闭</button>
             </div>
             <div class="chat-body" id="chatBody">
@@ -304,6 +323,19 @@
                 <div class="modal-desc" id="modalDesc"></div>
                 <div class="modal-meta" id="modalMeta"></div>
             </div>
+            <div class="comment-section" id="commentSection">
+                <h4>评论区</h4>
+                <div class="comment-list" id="commentList">
+                    <div class="comment-empty">加载中...</div>
+                </div>
+                <div id="commentUiArea">
+                    <div class="comment-input-area" id="commentInputArea" style="display:none;">
+                        <input type="text" id="commentInput" placeholder="写下你的评论..." onkeydown="if(event.key==='Enter')postComment()">
+                        <button class="btn btn-primary btn-sm" onclick="postComment()">发表</button>
+                    </div>
+                    <div class="comment-login-hint" id="commentLoginHint">请先登录再发表评论</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -315,6 +347,7 @@
         let config={user:'wlbaaa',repo:'video-hub',token:_tk};
         let allVideos=[];
         let currentUser=null;
+        let currentVideoId=null;
         let messages=[];
         let chatPollTimer=null;
 
@@ -333,7 +366,7 @@
                     document.getElementById('loginUser').value=data.username||'';
                     document.getElementById('loginPass').value=data.password||'';
                     document.getElementById('autoHint').style.display='block';
-                    setTimeout(()=>{checkLogin();},800);
+                    setTimeout(function(){checkLogin();},800);
                 }catch(e){}
             }
         }
@@ -348,7 +381,7 @@
                 const adminsData=JSON.parse(decodeBase64(data.content));
                 const subAdmins=adminsData.sub_admins||[];
                 const hash=await sha256(password);
-                const admin=subAdmins.find(a=>a.username===username&&a.password_hash===hash);
+                const admin=subAdmins.find(function(a){return a.username===username&&a.password_hash===hash;});
 
                 if(admin){
                     currentUser=admin.username;
@@ -388,8 +421,8 @@
             document.getElementById('videoGrid').innerHTML='<div class="empty-state"><div class="empty-icon">📺</div><h3>暂无视频</h3><p>请登录后查看</p></div>';
         }
 
-        document.getElementById('videoModal').addEventListener('click',(e)=>{if(e.target===e.currentTarget)closeModal();});
-        document.addEventListener('keydown',(e)=>{if(e.key==='Escape'){closeModal();if(document.getElementById('chatOverlay').classList.contains('visible'))toggleChat();}});
+        document.getElementById('videoModal').addEventListener('click',function(e){if(e.target===e.currentTarget)closeModal();});
+        document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();if(document.getElementById('chatOverlay').classList.contains('visible'))toggleChat();}});
 
         async function validateToken(){
             try{
@@ -419,12 +452,12 @@
                 grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">📺</div><h3>暂无视频</h3><p>去上传页面添加一些视频吧</p></div>';
                 return;
             }
-            grid.innerHTML=videos.map(v=>{
-                const videoUrl='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+v.path;
+            grid.innerHTML=videos.map(function(v){
+                var vu='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+v.path;
                 return '<div class="video-card" onclick="playVideo(\''+v.id+'\')">'+
                     '<div class="video-thumbnail">'+
                     '<span class="uploader-tag">📹 '+escapeHtml(v.uploaded_by||'管理员')+'</span>'+
-                    '<video src="'+videoUrl+'#t=1" muted preload="metadata"></video>'+
+                    '<video src="'+vu+'#t=1" muted preload="metadata"></video>'+
                     '<div class="play-icon">▶</div></div>'+
                     '<div class="video-info">'+
                     '<div class="video-title">'+escapeHtml(v.title)+'</div>'+
@@ -438,30 +471,115 @@
         function filterVideos(){
             const query=document.getElementById('searchInput').value.trim().toLowerCase();
             if(!query){renderVideos(allVideos);return;}
-            const filtered=allVideos.filter(v=>v.title.toLowerCase().includes(query)||(v.description&&v.description.toLowerCase().includes(query)));
-            renderVideos(filtered);
+            var f=allVideos.filter(function(v){return v.title.toLowerCase().indexOf(query)!==-1||(v.description&&v.description.toLowerCase().indexOf(query)!==-1);});
+            renderVideos(f);
         }
 
         function playVideo(id){
-            const video=allVideos.find(v=>v.id===id);
-            if(!video)return;
-            const videoUrl='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+video.path;
-            const modal=document.getElementById('videoModal');
-            const player=document.getElementById('modalPlayer');
-            document.getElementById('modalTitle').textContent=video.title;
-            document.getElementById('modalDesc').textContent=video.description||'';
-            document.getElementById('modalMeta').textContent=formatSize(video.size)+' · '+
-                new Date(video.uploadDate).toLocaleString('zh-CN')+' · 上传者: '+(video.uploaded_by||'管理员');
-            player.src=videoUrl;
+            var v=allVideos.find(function(x){return x.id===id;});
+            if(!v)return;
+            currentVideoId=id;
+            var vu='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+v.path;
+            var modal=document.getElementById('videoModal');
+            var player=document.getElementById('modalPlayer');
+            document.getElementById('modalTitle').textContent=v.title;
+            document.getElementById('modalDesc').textContent=v.description||'';
+            document.getElementById('modalMeta').textContent=formatSize(v.size)+' · '+
+                new Date(v.uploadDate).toLocaleString('zh-CN')+' · 上传者: '+(v.uploaded_by||'管理员');
+            player.src=vu;
             modal.classList.add('visible');
-            player.play().catch(()=>{});
+            player.play().catch(function(){});
+            loadComments(id);
+            updateCommentUi();
         }
 
         function closeModal(){
-            const modal=document.getElementById('videoModal');
-            const player=document.getElementById('modalPlayer');
+            var modal=document.getElementById('videoModal');
+            var player=document.getElementById('modalPlayer');
             player.pause();player.src='';
             modal.classList.remove('visible');
+            currentVideoId=null;
+        }
+
+        // Comments
+        function updateCommentUi(){
+            if(currentUser){
+                document.getElementById('commentInputArea').style.display='flex';
+                document.getElementById('commentLoginHint').style.display='none';
+            }else{
+                document.getElementById('commentInputArea').style.display='none';
+                document.getElementById('commentLoginHint').style.display='block';
+            }
+        }
+
+        async function loadComments(videoId){
+            var list=document.getElementById('commentList');
+            list.innerHTML='<div class="comment-empty">加载中...</div>';
+            try{
+                var raw=await loadCommentsData();
+                var all=raw.comments||[];
+                var videoComments=all.filter(function(c){return c.video_id===videoId;});
+                renderComments(videoComments);
+            }catch(e){
+                list.innerHTML='<div class="comment-empty">暂无评论</div>';
+            }
+        }
+
+        function renderComments(comments){
+            var list=document.getElementById('commentList');
+            if(comments.length===0){
+                list.innerHTML='<div class="comment-empty">暂无评论，来发表第一条吧</div>';
+                return;
+            }
+            comments.sort(function(a,b){return new Date(a.timestamp)-new Date(b.timestamp);});
+            list.innerHTML=comments.map(function(c){
+                return '<div class="comment-item">'+
+                    '<div class="comment-user">'+escapeHtml(c.username)+'</div>'+
+                    '<div class="comment-content">'+escapeHtml(c.content)+'</div>'+
+                    '<div class="comment-time">'+formatDate(c.timestamp)+' '+formatTime(c.timestamp)+'</div>'+
+                    '</div>';
+            }).join('');
+            list.scrollTop=list.scrollHeight;
+        }
+
+        async function postComment(){
+            var input=document.getElementById('commentInput');
+            var content=input.value.trim();
+            if(!content)return;
+            if(!currentUser){showToast('请先登录','error');return;}
+            if(!currentVideoId)return;
+
+            input.value='';
+            try{
+                var data=await loadCommentsData();
+                data.comments.push({
+                    id:Date.now().toString(),
+                    video_id:currentVideoId,
+                    username:currentUser,
+                    content:content,
+                    timestamp:new Date().toISOString()
+                });
+                await saveCommentsData(data);
+                loadComments(currentVideoId);
+            }catch(e){
+                showToast('评论失败: '+e.message,'error');
+            }
+        }
+
+        async function loadCommentsData(){
+            try{
+                var d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/comments.json');
+                return JSON.parse(decodeBase64(d.content));
+            }catch(e){return {comments:[]};}
+        }
+
+        async function saveCommentsData(data){
+            var json=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+            var sha=null;
+            try{var e=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/comments.json');sha=e.sha;}catch(e){}
+            var body={message:'New comment',content:json};
+            if(sha)body.sha=sha;
+            await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/comments.json',{method:'PUT',body:JSON.stringify(body)});
         }
 
         // Chat
@@ -480,7 +598,7 @@
         async function loadMessages(){
             const data=await loadMessagesData();
             const myMsgs=data.messages||[];
-            messages=myMsgs.filter(m=>m.to===currentUser||m.from===currentUser||m.to==='all');
+            messages=myMsgs.filter(function(m){return m.to===currentUser||m.from===currentUser||m.to==='all';});
             renderMessages();
         }
 
@@ -506,8 +624,8 @@
                 body.innerHTML='<div style="text-align:center;color:#555577;padding:2rem;">暂无消息</div>';
                 return;
             }
-            body.innerHTML=messages.map(m=>{
-                const isMe=m.from===currentUser;
+            body.innerHTML=messages.map(function(m){
+                var isMe=m.from===currentUser;
                 return '<div class="chat-msg '+(isMe?'me':'other')+'">'+
                     (isMe?'':'<div class="msg-sender">'+escapeHtml(m.from)+'</div>')+
                     '<div>'+escapeHtml(m.content)+'</div>'+
@@ -537,10 +655,10 @@
         let lastMsgCount=0;
         function startChatPoll(){
             if(chatPollTimer)clearInterval(chatPollTimer);
-            chatPollTimer=setInterval(async()=>{
+            chatPollTimer=setInterval(async function(){
                 try{
                     const data=await loadMessagesData();
-                    const myMsgs=(data.messages||[]).filter(m=>m.to===currentUser||m.from===currentUser||m.to==='all');
+                    const myMsgs=(data.messages||[]).filter(function(m){return m.to===currentUser||m.from===currentUser||m.to==='all';});
                     if(myMsgs.length>lastMsgCount){
                         if(!document.getElementById('chatOverlay').classList.contains('visible')){
                             document.getElementById('msgDot').classList.add('show');
@@ -561,16 +679,18 @@
             return d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
         }
 
-        async function githubAPI(endpoint,options={}){
-            const url='https://api.github.com'+endpoint;
-            const response=await fetch(url,{...options,headers:{
+        async function githubAPI(endpoint,options){
+            options=options||{};
+            var headers={
                 'Authorization':'token '+config.token,
                 'Accept':'application/vnd.github.v3+json',
-                'Content-Type':'application/json',
-                ...(options.headers||{})
-            }});
-            if(!response.ok){const ed=await response.json().catch(()=>({}));throw new Error(ed.message||'HTTP '+response.status);}
-            return response.json();
+                'Content-Type':'application/json'
+            };
+            if(options.headers)for(var k in options.headers)headers[k]=options.headers[k];
+            var url='https://api.github.com'+endpoint;
+            var resp=await fetch(url,{method:options.method||'GET',headers:headers,body:options.body||undefined});
+            if(!resp.ok){var ed=await resp.json().catch(function(){return{};});throw new Error(ed.message||'HTTP '+resp.status);}
+            return resp.json();
         }
 
         async function getVideos(){
@@ -584,7 +704,7 @@
         function formatSize(b){if(!b||b===0)return'0 B';const k=1024;const s=['B','KB','MB','GB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i];}
         function formatDate(isoStr){if(!isoStr)return'';const d=new Date(isoStr);return d.toLocaleDateString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit'});}
         function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-        function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000);}
+        function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'')+' show';setTimeout(function(){t.classList.remove('show');},3000);}
 
         // Init
         checkAutoLogin();
