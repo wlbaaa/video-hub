@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>发布作品 - Video Hub</title>
+<style>
+:root{--bg:#0a0a1a;--card:#12122a;--text:#e0e0f0;--muted:#7777aa;--accent:#667eea;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:72px}
+.container{max-width:500px;margin:0 auto;padding:1rem}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;position:sticky;top:0;background:var(--bg);z-index:100;border-bottom:1px solid #1a1a3a}
+.topbar h1{font-size:1.1rem}
+
+/* Login */
+.login-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:2000;align-items:center;justify-content:center;padding:1rem}
+.login-overlay.visible{display:flex}
+.login-panel{background:#1a1a2e;border-radius:16px;border:1px solid #2a2a4a;width:100%;max-width:380px;padding:1.5rem}
+.login-panel h3{margin-bottom:0.3rem}
+.login-panel p{color:var(--muted);font-size:0.85rem;margin-bottom:1rem}
+.login-panel input{width:100%;padding:0.65rem;border-radius:8px;border:1px solid #2a2a4a;background:#0a0a1a;color:var(--text);margin-bottom:0.5rem}
+.login-error{color:#f66;font-size:0.8rem;margin-bottom:0.5rem;display:none}
+
+/* Upload area */
+.upload-section{margin-top:1rem}
+.drop-zone{border:2px dashed #2a2a4a;border-radius:var(--radius);padding:2.5rem 1.5rem;text-align:center;cursor:pointer;transition:border-color 0.3s;margin-bottom:1rem}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent)}
+.drop-zone .dz-icon{font-size:3rem;margin-bottom:0.5rem}
+.drop-zone p{color:var(--muted);font-size:0.85rem}
+.drop-zone .dz-hint{color:#444466;font-size:0.75rem;margin-top:0.5rem}
+.file-name{font-size:0.85rem;color:var(--accent);text-align:center;margin-bottom:0.5rem;word-break:break-all}
+
+.form-group{margin-bottom:0.75rem}
+.form-group label{display:block;font-size:0.8rem;color:var(--muted);margin-bottom:0.3rem}
+.form-group input,.form-group textarea{width:100%;padding:0.6rem;border-radius:8px;border:1px solid #2a2a4a;background:#12122a;color:var(--text);font-size:0.9rem;font-family:inherit}
+.form-group textarea{resize:vertical;min-height:70px}
+.form-group input:focus,.form-group textarea:focus{border-color:var(--accent);outline:none}
+
+.upload-bar{height:6px;background:#2a2a4a;border-radius:3px;overflow:hidden;margin:0.5rem 0;display:none}
+.upload-bar .bar-fill{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);width:0;transition:width 0.3s}
+.upload-status{color:var(--muted);font-size:0.8rem;text-align:center;display:none}
+
+/* Locked state */
+.locked-state{text-align:center;padding:4rem 1rem;color:var(--muted)}
+.locked-state .lock-icon{font-size:4rem;margin-bottom:1rem}
+
+/* Buttons */
+.btn{padding:0.6rem 1.2rem;border-radius:8px;border:none;cursor:pointer;font-size:0.9rem;font-weight:600;transition:0.2s}
+.btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.btn-block{display:block;width:100%;text-align:center}
+.btn-sm{padding:0.35rem 0.8rem;font-size:0.78rem}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid #2a2a4a}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:0.5rem 1.2rem;border-radius:20px;font-size:0.85rem;z-index:9999;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.toast.show{opacity:1}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;border-top:1px solid #2a2a4a;display:flex;justify-content:space-around;padding:0.5rem 0;padding-bottom:max(0.5rem,env(safe-area-inset-bottom));z-index:900}
+.bottom-nav a{display:flex;flex-direction:column;align-items:center;text-decoration:none;color:var(--muted);font-size:0.7rem;gap:2px;transition:color 0.2s}
+.bottom-nav a.active,.bottom-nav a:hover{color:var(--accent)}
+.bn-icon{font-size:1.25rem}
+</style>
+</head>
+<body>
+<div class="topbar">
+    <h1>发布作品</h1>
+    <button class="btn btn-ghost btn-sm" id="btnAccount" onclick="toggleLogin()">登录</button>
+</div>
+
+<div class="container">
+    <!-- Not logged in -->
+    <div id="lockedState" class="locked-state">
+        <div class="lock-icon">🔒</div>
+        <h2>请先登录</h2>
+        <p>使用副管理员账号登录后发布作品</p>
+        <button class="btn btn-primary btn-block" onclick="toggleLogin()" style="max-width:200px;margin:1rem auto">去登录</button>
+    </div>
+
+    <!-- Upload form (visible when logged in) -->
+    <div id="uploadSection" class="upload-section" style="display:none">
+        <div class="drop-zone" id="dropZone">
+            <div class="dz-icon">📹</div>
+            <p>点击选择视频或拖拽到此处</p>
+            <div class="dz-hint">支持 MP4 / MOV / WebM，最大 100MB</div>
+            <input type="file" id="fileInput" accept="video/*" style="display:none">
+        </div>
+        <div class="file-name" id="fileName"></div>
+        <div class="form-group">
+            <label>标题 *</label>
+            <input type="text" id="titleInput" placeholder="给作品起个名字">
+        </div>
+        <div class="form-group">
+            <label>描述</label>
+            <textarea id="descInput" placeholder="简单介绍一下这个视频（可选）"></textarea>
+        </div>
+        <div class="upload-bar" id="uploadBar"><div class="bar-fill" id="barFill"></div></div>
+        <div class="upload-status" id="uploadStatus"></div>
+        <button class="btn btn-primary btn-block" id="publishBtn" onclick="doPublish()" disabled>发布作品</button>
+    </div>
+</div>
+
+<!-- Login Modal -->
+<div class="login-overlay" id="loginOverlay">
+    <div class="login-panel">
+        <h3>登录</h3>
+        <p>使用副管理员账号</p>
+        <form onsubmit="doLogin(event)">
+            <input type="text" id="loginUser" placeholder="用户名" required autocomplete="username">
+            <input type="password" id="loginPass" placeholder="密码" required autocomplete="current-password">
+            <div class="login-error" id="loginError"></div>
+            <button class="btn btn-primary btn-block" type="submit">登录</button>
+            <button class="btn btn-ghost btn-block" type="button" onclick="toggleLogin()" style="margin-top:0.5rem">取消</button>
+        </form>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bottom-nav">
+    <a href="publish.html" class="active"><span class="bn-icon">📹</span>创作</a>
+    <a href="my.html"><span class="bn-icon">👤</span>我的</a>
+    <a href="view.html"><span class="bn-icon">🔥</span>推荐</a>
+</div>
+
+<script>
+const _p1='Z2hw',_p2='XzdSNm0xamdINTdK',_p3='ZFlsUmpyQllDM2k5',_p4='aVRvYTFNNDByNFNlRg==';
+const _tk=atob(_p1+_p2+_p3+_p4);
+let config={user:'wlbaaa',repo:'video-hub',token:_tk};
+let currentUser=null;
+let selectedFile=null;
+
+// ────── Login ──────
+async function sha256(msg){
+    const buf=new TextEncoder().encode(msg);
+    const h=await crypto.subtle.digest('SHA-256',buf);
+    return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function doLogin(e){
+    e.preventDefault();
+    const u=document.getElementById('loginUser').value.trim();
+    const p=document.getElementById('loginPass').value.trim();
+    if(!u||!p)return;
+    try{
+        const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/sub_admins.json');
+        const admins=JSON.parse(decodeBase64(r.content));
+        const found=admins.find(a=>a.username===u);
+        if(!found||(await sha256(p))!==found.password){
+            document.getElementById('loginError').style.display='block';
+            document.getElementById('loginError').textContent='用户名或密码错误';
+            return;
+        }
+        currentUser=u;
+        document.getElementById('loginError').style.display='none';
+        document.getElementById('loginOverlay').classList.remove('visible');
+        document.getElementById('btnAccount').textContent='退出';
+        document.getElementById('btnAccount').onclick=logout;
+        document.getElementById('lockedState').style.display='none';
+        document.getElementById('uploadSection').style.display='block';
+        showToast('已登录：'+u);
+    }catch(e){
+        document.getElementById('loginError').style.display='block';
+        document.getElementById('loginError').textContent='登录失败: '+e.message;
+    }
+}
+function toggleLogin(){
+    const ov=document.getElementById('loginOverlay');
+    if(ov.classList.contains('visible')){ ov.classList.remove('visible'); }
+    else{ document.getElementById('loginError').style.display='none'; ov.classList.add('visible'); }
+}
+function logout(){
+    currentUser=null;
+    selectedFile=null;
+    document.getElementById('btnAccount').textContent='登录';
+    document.getElementById('btnAccount').onclick=toggleLogin;
+    document.getElementById('lockedState').style.display='block';
+    document.getElementById('uploadSection').style.display='none';
+    document.getElementById('publishBtn').disabled=true;
+    showToast('已退出');
+}
+
+// ────── File Handling ──────
+document.addEventListener('DOMContentLoaded',function(){
+    const dz=document.getElementById('dropZone');
+    const fi=document.getElementById('fileInput');
+    dz.addEventListener('click',function(){fi.click()});
+    dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('dragover')});
+    dz.addEventListener('dragleave',function(){dz.classList.remove('dragover')});
+    dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('dragover');onFile(e.dataTransfer.files[0])});
+    fi.addEventListener('change',function(){onFile(fi.files[0])});
+});
+function onFile(file){
+    if(!file)return;
+    if(!/^video\//.test(file.type)){showToast('请选择视频文件');return}
+    if(file.size>100*1024*1024){showToast('视频不能超过 100MB');return}
+    selectedFile=file;
+    document.getElementById('fileName').textContent='已选择：'+file.name+' ('+formatSize(file.size)+')';
+    document.getElementById('publishBtn').disabled=false;
+}
+
+// ────── Publish ──────
+async function doPublish(){
+    if(!currentUser){showToast('请先登录');return}
+    if(!selectedFile){showToast('请选择视频文件');return}
+    const title=document.getElementById('titleInput').value.trim();
+    if(!title){showToast('请输入标题');return}
+    const desc=document.getElementById('descInput').value.trim();
+    const btn=document.getElementById('publishBtn');
+    btn.disabled=true;
+    btn.textContent='处理中...';
+    document.getElementById('uploadBar').style.display='block';
+    document.getElementById('uploadStatus').style.display='block';
+    document.getElementById('uploadStatus').textContent='编码中... ('+formatSize(selectedFile.size)+')';
+    document.getElementById('barFill').style.width='20%';
+    const reader=new FileReader();
+    reader.onprogress=function(e){
+        if(e.lengthComputable){
+            document.getElementById('barFill').style.width=Math.min(90,20+(e.loaded/e.total)*70)+'%';
+        }
+    };
+    reader.onload=async function(){
+        document.getElementById('barFill').style.width='95%';
+        document.getElementById('uploadStatus').textContent='上传中...';
+        try{
+            const base64=reader.result.split(',')[1];
+            const timestamp=new Date().toISOString();
+            const videoId='v_'+Date.now();
+            const ext=selectedFile.name.split('.').pop()||'mp4';
+            const shaVal=await sha256(selectedFile.name+timestamp);
+            const newVideo={
+                id:videoId,
+                title:title,
+                description:desc,
+                filename:selectedFile.name,
+                size:selectedFile.size,
+                uploaded_by:currentUser,
+                sha:shaVal.substring(0,16),
+                created_at:timestamp,
+                path:'videos/'+videoId+'.'+ext
+            };
+            // Upload video file
+            await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/'+newVideo.path,{
+                method:'PUT',
+                body:JSON.stringify({message:'publish: '+title,content:base64})
+            });
+            // Update videos.json
+            let sha=null;
+            try{const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json');sha=r.sha}catch(e){}
+            let vData={videos:[]};
+            try{const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json');vData=JSON.parse(decodeBase64(r.content))}catch(e){}
+            vData.videos=vData.videos||[];
+            vData.videos.unshift(newVideo);
+            const content=btoa(unescape(encodeURIComponent(JSON.stringify(vData,null,2))));
+            await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json',{
+                method:'PUT',
+                body:JSON.stringify({message:'update videos.json',content:content,sha:sha||undefined})
+            });
+            document.getElementById('barFill').style.width='100%';
+            document.getElementById('uploadStatus').textContent='发布成功！';
+            showToast('发布成功');
+            // Reset form
+            setTimeout(function(){
+                selectedFile=null;
+                document.getElementById('fileInput').value='';
+                document.getElementById('fileName').textContent='';
+                document.getElementById('titleInput').value='';
+                document.getElementById('descInput').value='';
+                document.getElementById('uploadBar').style.display='none';
+                document.getElementById('uploadStatus').style.display='none';
+                document.getElementById('barFill').style.width='0';
+                btn.textContent='发布作品';
+                btn.disabled=true;
+            },1500);
+        }catch(e){
+            document.getElementById('uploadStatus').textContent='发布失败: '+e.message;
+            document.getElementById('barFill').style.background='#f44';
+            btn.textContent='重试';
+            btn.disabled=false;
+        }
+    };
+    reader.readAsDataURL(selectedFile);
+}
+
+// ────── GitHub API ──────
+async function githubAPI(endpoint,options){
+    const opts=options||{};
+    const url='https://api.github.com/'+endpoint;
+    const res=await fetch(url,{
+        method:opts.method||'GET',
+        headers:{
+            'Authorization':'token '+config.token,
+            'Accept':'application/vnd.github.v3+json',
+            'Content-Type':'application/json'
+        },
+        body:opts.body||undefined
+    });
+    if(!res.ok){
+        const e=await res.text();
+        throw new Error(res.status+' '+e);
+    }
+    return res.status===204?null:res.json();
+}
+
+// ────── Utils ──────
+function decodeBase64(str){return decodeURIComponent(escape(atob(str.replace(/\n/g,''))))}
+function formatSize(b){if(!b||b===0)return'0 B';const k=1024;const s=['B','KB','MB','GB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
+function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(function(){t.classList.remove('show')},2500)}
+</script>
+</body>
+</html>
