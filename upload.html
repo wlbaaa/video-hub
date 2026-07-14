@@ -164,7 +164,7 @@ th{color:#8888aa;font-weight:500}
 const _p1='Z2hw',_p2='XzdSNm0xamdINTdK',_p3='ZFlsUmpyQllDM2k5',_p4='aVRvYTFNNDByNFNlRg==';
 const _tk=atob(_p1+_p2+_p3+_p4);
 const config={user:'wlbaaa',repo:'video-hub',token:_tk};
-let subAdmins=[],_videos=[];
+let subAdmins=[],_videos=[],_editAnnIdx=null;
 
 // Tab switching
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',function(){
@@ -429,16 +429,27 @@ function esc(s){if(!s)return'';const d=document.createElement('div');d.textConte
 function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000)}
 
 // Announcements
-function openAnnounceModal(){
-  document.getElementById('annTitle').value='';
-  document.getElementById('annContent').value='';
-  document.getElementById('annHasBtn').checked=false;
-  document.getElementById('annBtnFields').style.display='none';
-  document.getElementById('annBtnText').value='';
-  document.getElementById('annBtnUrl').value='';
+function openAnnounceModal(item){
+  _editAnnIdx=item!==undefined?item.index:null;
+  if(item){
+    document.getElementById('annTitle').value=item.title||'';
+    document.getElementById('annContent').value=item.content||'';
+    const hasBtn=!!(item.button_text&&item.button_url);
+    document.getElementById('annHasBtn').checked=hasBtn;
+    document.getElementById('annBtnFields').style.display=hasBtn?'block':'none';
+    document.getElementById('annBtnText').value=item.button_text||'';
+    document.getElementById('annBtnUrl').value=item.button_url||'';
+  }else{
+    document.getElementById('annTitle').value='';
+    document.getElementById('annContent').value='';
+    document.getElementById('annHasBtn').checked=false;
+    document.getElementById('annBtnFields').style.display='none';
+    document.getElementById('annBtnText').value='';
+    document.getElementById('annBtnUrl').value='';
+  }
   document.getElementById('announceModal').classList.remove('hidden');
 }
-function closeAnnounceModal(){document.getElementById('announceModal').classList.add('hidden')}
+function closeAnnounceModal(){document.getElementById('announceModal').classList.add('hidden');_editAnnIdx=null;}
 
 async function loadAnnouncements(){
   const panel=document.getElementById('announcePanel');
@@ -452,8 +463,17 @@ async function loadAnnouncements(){
 <div style="color:#888;font-size:0.85rem;margin-top:0.2rem">${esc(a.content)}</div>
 <div class="time">发布于 ${fmtDate(a.created_at)}${a.button_text?' · 按钮: '+esc(a.button_text):''}</div>
 </div>
+<div style="display:flex;gap:0.5rem">
+<button class="btn btn-primary btn-sm" data-edit="${i}">编辑</button>
 <button class="btn btn-danger btn-sm" data-idx="${i}">删除</button>
+</div>
 </div>`).join('');
+    panel.querySelectorAll('button[data-edit]').forEach(b=>b.addEventListener('click',function(){
+      const idx=parseInt(this.dataset.edit);
+      const item=list[idx];
+      item.index=idx;
+      openAnnounceModal(item);
+    }));
     panel.querySelectorAll('button[data-idx]').forEach(b=>b.addEventListener('click',function(){deleteAnnouncement(parseInt(this.dataset.idx))}));
   }catch(e){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem">暂无公告</div>'}
 }
@@ -471,13 +491,19 @@ async function saveAnnouncement(){
     try{const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/announcements.json');data=JSON.parse(decodeBase64(d.content))}catch(e){}
     const item={id:Date.now().toString(),title,content,created_at:new Date().toISOString()};
     if(hasBtn){item.button_text=btnText;item.button_url=btnUrl}
-    data.announcements.unshift(item);
+    if(_editAnnIdx!==null&&_editAnnIdx>=0&&_editAnnIdx<data.announcements.length){
+      item.id=data.announcements[_editAnnIdx].id;
+      item.created_at=data.announcements[_editAnnIdx].created_at;
+      data.announcements[_editAnnIdx]=item;
+    }else{
+      data.announcements.unshift(item);
+    }
     const json=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
     let sha=null;
     try{const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/announcements.json');sha=d.sha}catch(e){}
-    const body={message:'Add announcement: '+title,content:json};if(sha)body.sha=sha;
+    const body={message:(_editAnnIdx!==null?'Update':'Add')+' announcement: '+title,content:json};if(sha)body.sha=sha;
     await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/announcements.json',{method:'PUT',body:JSON.stringify(body)});
-    showToast('公告已发布');closeAnnounceModal();loadAnnouncements();
+    showToast(_editAnnIdx!==null?'公告已更新':'公告已发布');closeAnnounceModal();loadAnnouncements();
   }catch(e){showToast('发布失败: '+e.message,'error')}
 }
 
@@ -495,3 +521,4 @@ async function deleteAnnouncement(index){
 </script>
 </body>
 </html>
+
