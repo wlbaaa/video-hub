@@ -320,6 +320,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 
 // ────── Auto Login ──────
 (async function autoLogin(){
+    if(window._viewingUser)return;
     const saved=localStorage.getItem('vh_subadmin');
     if(!saved)return;
     try{
@@ -340,4 +341,5 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 </script>
 </body>
 </html>
+
 
