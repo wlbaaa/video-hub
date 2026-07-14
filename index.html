@@ -47,6 +47,54 @@
         }
         .bottom-bar a:hover { color: #8899dd; }
 
+        /* Announcement bar */
+        .announce-bar {
+            background: linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.15));
+            border: 1px solid rgba(102,126,234,0.3);
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+            display: none;
+        }
+        .announce-bar.visible { display: block; }
+        .announce-bar .ann-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+            color: #e0e0e0;
+        }
+        .announce-bar .ann-content {
+            font-size: 0.85rem;
+            color: #a0a0c0;
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
+        }
+        .announce-bar .ann-btn {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .announce-bar .ann-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+        }
+        .announce-bar .ann-close {
+            float: right;
+            cursor: pointer;
+            color: #555577;
+            font-size: 1.1rem;
+            line-height: 1;
+            margin-left: 0.5rem;
+        }
+        .announce-bar .ann-close:hover { color: #e0e0e0; }
+
         /* Modal */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -109,6 +157,12 @@
             <div class="container">
                 <div class="logo">Video Hub</div>
                 <div class="subtitle">视频分享与管理平台</div>
+                <div class="announce-bar" id="announceBar">
+                    <span class="ann-close" onclick="closeAnnounce()">&times;</span>
+                    <div class="ann-title" id="annTitle"></div>
+                    <div class="ann-content" id="annContent"></div>
+                    <a class="ann-btn" id="annBtn" style="display:none" target="_blank"></a>
+                </div>
                 <div class="cards">
                     <div class="card" onclick="openRegister()">
                         <div class="icon">📝</div>
@@ -167,6 +221,29 @@
         const config={user:'wlbaaa',repo:'video-hub',token:_tk};
 
         document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+        document.addEventListener('DOMContentLoaded',loadAnnouncement);
+
+        async function loadAnnouncement(){
+            try{
+                const r=await fetch('https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/announcements.json?t='+Date.now());
+                const data=await r.json();
+                const list=data.announcements||[];
+                if(list.length===0)return;
+                const a=list[0];
+                document.getElementById('annTitle').textContent=a.title;
+                document.getElementById('annContent').textContent=a.content;
+                if(a.button_text&&a.button_url){
+                    const btn=document.getElementById('annBtn');
+                    btn.textContent=a.button_text;
+                    btn.href=a.button_url;
+                    btn.style.display='inline-block';
+                }
+                document.getElementById('announceBar').classList.add('visible');
+            }catch(e){}
+        }
+        function closeAnnounce(){
+            document.getElementById('announceBar').classList.remove('visible');
+        }
 
         function openRegister(){
             document.getElementById('regModal').classList.add('visible');

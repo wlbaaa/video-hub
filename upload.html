@@ -94,6 +94,7 @@ th{color:#8888aa;font-weight:500}
 <button class="tab" data-tab="admins">管理副管理员</button>
 <button class="tab" data-tab="messages">消息中心</button>
 <button class="tab" data-tab="registrations">注册审核</button>
+<button class="tab" data-tab="announcements">公告管理</button>
 </div>
 <div class="tab-panel active" id="tab-upload">
 <div class="upload-area" id="uploadArea">
@@ -127,8 +128,37 @@ th{color:#8888aa;font-weight:500}
 <h3 style="margin-bottom:1rem">注册审核</h3>
 <div id="regPanel"><div style="color:#555577;text-align:center;padding:2rem">加载中...</div></div>
 </div>
+<div class="tab-panel" id="tab-announcements">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+<h3>公告管理</h3>
+<button class="btn btn-primary btn-sm" onclick="openAnnounceModal()">+ 添加公告</button>
+</div>
+<div id="announcePanel"><div style="color:#555577;text-align:center;padding:2rem">加载中...</div></div>
 </div>
 </div>
+</div>
+
+<!-- Announcement Modal -->
+<div class="key-modal-overlay hidden" id="announceModal">
+<div class="key-modal" style="max-width:480px;text-align:left">
+<h3 style="margin-bottom:1rem">添加公告</h3>
+<div class="form-group"><label>公告标题</label><input type="text" id="annTitle" placeholder="输入公告标题"></div>
+<div class="form-group"><label>公告内容</label><textarea id="annContent" placeholder="输入公告主要内容" style="min-height:100px"></textarea></div>
+<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
+<input type="checkbox" id="annHasBtn" style="width:auto">
+<label for="annHasBtn" style="margin:0;cursor:pointer">添加跳转按钮</label>
+</div>
+<div id="annBtnFields" style="display:none">
+<div class="form-group"><label>按钮文字</label><input type="text" id="annBtnText" placeholder="例如：查看详情"></div>
+<div class="form-group"><label>跳转链接</label><input type="text" id="annBtnUrl" placeholder="例如：https://example.com"></div>
+</div>
+<div style="display:flex;gap:0.5rem;justify-content:flex-end">
+<button class="btn btn-ghost" onclick="closeAnnounceModal()">取消</button>
+<button class="btn btn-primary" onclick="saveAnnouncement()">发布</button>
+</div>
+</div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script>
 const _p1='Z2hw',_p2='XzdSNm0xamdINTdK',_p3='ZFlsUmpyQllDM2k5',_p4='aVRvYTFNNDByNFNlRg==';
@@ -146,7 +176,12 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',function
   if(name==='admins')loadAdmins();
   if(name==='messages')loadMessagesPanel();
   if(name==='registrations')loadRegistrations();
+  if(name==='announcements')loadAnnouncements();
 }));
+
+document.getElementById('annHasBtn').addEventListener('change',function(){
+  document.getElementById('annBtnFields').style.display=this.checked?'block':'none';
+});
 
 // Upload area
 const ua=document.getElementById('uploadArea');
@@ -392,6 +427,71 @@ function fmtDate(s){if(!s)return'';return new Date(s).toLocaleDateString('zh-CN'
 function fmtTime(s){if(!s)return'';return new Date(s).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}
 function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000)}
+
+// Announcements
+function openAnnounceModal(){
+  document.getElementById('annTitle').value='';
+  document.getElementById('annContent').value='';
+  document.getElementById('annHasBtn').checked=false;
+  document.getElementById('annBtnFields').style.display='none';
+  document.getElementById('annBtnText').value='';
+  document.getElementById('annBtnUrl').value='';
+  document.getElementById('announceModal').classList.remove('hidden');
+}
+function closeAnnounceModal(){document.getElementById('announceModal').classList.add('hidden')}
+
+async function loadAnnouncements(){
+  const panel=document.getElementById('announcePanel');
+  try{
+    const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/announcements.json');
+    const list=JSON.parse(decodeBase64(data.content)).announcements||[];
+    if(list.length===0){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem">暂无公告</div>';return}
+    panel.innerHTML=list.map((a,i)=>`<div class="card admin-item" style="margin-bottom:0.5rem">
+<div class="info" style="flex:1">
+<div class="name">${esc(a.title)}</div>
+<div style="color:#888;font-size:0.85rem;margin-top:0.2rem">${esc(a.content)}</div>
+<div class="time">发布于 ${fmtDate(a.created_at)}${a.button_text?' · 按钮: '+esc(a.button_text):''}</div>
+</div>
+<button class="btn btn-danger btn-sm" data-idx="${i}">删除</button>
+</div>`).join('');
+    panel.querySelectorAll('button[data-idx]').forEach(b=>b.addEventListener('click',function(){deleteAnnouncement(parseInt(this.dataset.idx))}));
+  }catch(e){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem">暂无公告</div>'}
+}
+
+async function saveAnnouncement(){
+  const title=document.getElementById('annTitle').value.trim();
+  const content=document.getElementById('annContent').value.trim();
+  const hasBtn=document.getElementById('annHasBtn').checked;
+  const btnText=hasBtn?document.getElementById('annBtnText').value.trim():'';
+  const btnUrl=hasBtn?document.getElementById('annBtnUrl').value.trim():'';
+  if(!title||!content){showToast('请填写标题和内容','error');return}
+  if(hasBtn&&(!btnText||!btnUrl)){showToast('请填写按钮文字和链接','error');return}
+  try{
+    let data={announcements:[]};
+    try{const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/announcements.json');data=JSON.parse(decodeBase64(d.content))}catch(e){}
+    const item={id:Date.now().toString(),title,content,created_at:new Date().toISOString()};
+    if(hasBtn){item.button_text=btnText;item.button_url=btnUrl}
+    data.announcements.unshift(item);
+    const json=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+    let sha=null;
+    try{const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/announcements.json');sha=d.sha}catch(e){}
+    const body={message:'Add announcement: '+title,content:json};if(sha)body.sha=sha;
+    await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/announcements.json',{method:'PUT',body:JSON.stringify(body)});
+    showToast('公告已发布');closeAnnounceModal();loadAnnouncements();
+  }catch(e){showToast('发布失败: '+e.message,'error')}
+}
+
+async function deleteAnnouncement(index){
+  if(!confirm('确定删除这条公告吗？'))return;
+  try{
+    const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/announcements.json');
+    const data=JSON.parse(decodeBase64(d.content));
+    data.announcements.splice(index,1);
+    const json=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+    await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/announcements.json',{method:'PUT',body:JSON.stringify({message:'Delete announcement',content:json,sha:d.sha})});
+    showToast('公告已删除');loadAnnouncements();
+  }catch(e){showToast('删除失败: '+e.message,'error')}
+}
 </script>
 </body>
 </html>
