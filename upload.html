@@ -258,8 +258,10 @@ async function deleteVideo(id){
   const v=_videos.find(v=>v.id===id);if(!v)return;
   if(!confirm('确定删除视频 "'+v.title+'" 吗？'))return;
   try{
-    const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/'+v.path);
-    await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/'+v.path,{method:'DELETE',body:JSON.stringify({message:'Delete '+v.title,sha:d.sha})});
+    try{
+      const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/'+v.path);
+      await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/'+v.path,{method:'DELETE',body:JSON.stringify({message:'Delete '+v.title,sha:d.sha})});
+    }catch(e){if(!e.message.includes('Not Found'))throw e;}
     const nd=_videos.filter(v=>v.id!==id);
     const vjson=btoa(unescape(encodeURIComponent(JSON.stringify(nd,null,2))));
     const vd=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');
