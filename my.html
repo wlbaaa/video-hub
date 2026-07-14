@@ -198,7 +198,7 @@ async function loadMyVideos(){
     const grid=document.getElementById('videoGrid');
     const es=document.getElementById('emptyState');
     if(!currentUser){grid.innerHTML='';es.style.display='block';document.getElementById('emptyTitle').textContent='登录后查看作品';document.getElementById('emptyDesc').textContent='使用副管理员账号登录';document.getElementById('emptyLoginBtn').style.display='';return}
-    const myVids=allVideos.filter(v=>v.uploaded_by===currentUser);
+    const myVids=allVideos.filter(v=>(v.uploaded_by||'管理员')===currentUser);
     document.getElementById('profileCount').textContent=myVids.length+' 个作品';
     if(myVids.length===0){
         grid.innerHTML='';
@@ -341,5 +341,6 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 </script>
 </body>
 </html>
+
 
 
