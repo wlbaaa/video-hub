@@ -1,330 +1,61 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Video Hub</title>
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开放创作者平台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #0f0f1a; color: #e0e0e0; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .container { text-align: center; padding: 2rem; max-width: 600px; width: 100%; }
+        .logo {
+            font-size: 3rem; margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            font-weight: 700;
+        }
+        .subtitle { color: #8888aa; margin-bottom: 3rem; font-size: 1.1rem; }
+        .cards { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; }
+        .card {
+            background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 16px;
+            padding: 2rem 1.5rem; width: 220px; text-align: center; cursor: pointer;
+            transition: all 0.3s; text-decoration: none; color: #e0e0e0;
+        }
+        .card:hover {
+            transform: translateY(-6px); border-color: #667eea;
+            box-shadow: 0 12px 40px rgba(102,126,234,0.2);
+        }
+        .card .icon { font-size: 3rem; margin-bottom: 1rem; }
+        .card h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .card p { color: #8888aa; font-size: 0.85rem; line-height: 1.5; }
 
-:root {
-  --bg: oklch(0.13 0.02 265);
-  --surface: oklch(0.17 0.02 265);
-  --surface-hover: oklch(0.21 0.02 265);
-  --accent: oklch(0.68 0.18 250);
-  --accent-2: oklch(0.62 0.21 300);
-  --accent-3: oklch(0.70 0.18 170);
-  --text: oklch(0.93 0.01 265);
-  --text-muted: oklch(0.60 0.02 265);
-  --text-dim: oklch(0.42 0.02 265);
-  --border: oklch(0.24 0.02 265);
-  --border-light: oklch(0.30 0.02 265);
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-full: 999px;
-  --font: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', system-ui, sans-serif;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-html, body {
-  height: 100%;
-  overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-font-smoothing: antialiased;
-}
-
-body {
-  font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
-  display: flex;
-  justify-content: center;
-}
-
-.app-shell {
-  width: 100%;
-  max-width: 480px;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: 0 20px 80px;
-  position: relative;
-}
-
-/* Hero */
-.hero {
-  padding: 48px 0 32px;
-  text-align: center;
-}
-
-.logo-mark {
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 20px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 34px;
-  color: white;
-  box-shadow: 0 8px 32px oklch(0.68 0.18 250 / 0.25);
-}
-
-.hero h1 {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, var(--text), oklch(0.78 0.04 260));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.hero p {
-  font-size: 14px;
-  color: var(--text-muted);
-  line-height: 1.6;
-}
-
-/* Auth buttons */
-.auth-section {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 36px;
-}
-
-.btn {
-  flex: 1;
-  height: 50px;
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: var(--font);
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.btn:active { transform: scale(0.97); }
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white;
-  box-shadow: 0 4px 20px oklch(0.68 0.18 250 / 0.3);
-}
-
-.btn-outline {
-  background: transparent;
-  color: var(--text);
-  border: 1.5px solid var(--border-light);
-}
-
-.btn-outline:active { background: var(--surface-hover); }
-
-/* Section header */
-.section-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.section-header h2 {
-  font-size: 18px;
-  font-weight: 650;
-  letter-spacing: -0.3px;
-}
-
-.section-header span {
-  font-size: 12px;
-  color: var(--text-dim);
-}
-
-/* Hub cards */
-.hub-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 36px;
-}
-
-.hub-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  cursor: pointer;
-  text-decoration: none;
-  color: inherit;
-  transition: border-color 0.2s, background 0.2s, transform 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.hub-card:active {
-  background: var(--surface-hover);
-  transform: scale(0.985);
-}
-
-.hub-card:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.hub-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  flex-shrink: 0;
-}
-
-.hub-icon.chat {
-  background: oklch(0.20 0.03 170);
-  color: var(--accent-3);
-}
-
-.hub-icon.video {
-  background: oklch(0.20 0.03 290);
-  color: oklch(0.72 0.18 290);
-}
-
-.hub-info { flex: 1; min-width: 0; }
-
-.hub-info h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 3px;
-}
-
-.hub-info p {
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.hub-arrow {
-  font-size: 18px;
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-
-/* Footer */
-.site-footer {
-  text-align: center;
-  padding: 24px 0;
-}
-
-.site-footer p {
-  font-size: 11px;
-  color: var(--text-dim);
-  line-height: 1.8;
-}
-
-/* Decorative gradient blobs */
-.bg-blob {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.12;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.bg-blob-1 {
-  width: 280px;
-  height: 280px;
-  background: var(--accent);
-  top: -80px;
-  right: -60px;
-}
-
-.bg-blob-2 {
-  width: 200px;
-  height: 200px;
-  background: var(--accent-2);
-  bottom: 120px;
-  left: -60px;
-}
-
-/* Responsive */
-@media (min-width: 481px) {
-  body { background: var(--bg); }
-  .app-shell { padding-bottom: 40px; }
-  .bg-blob { display: none; }
-}
-
-@media (max-width: 360px) {
-  .hero { padding: 36px 0 24px; }
-  .hero h1 { font-size: 26px; }
-  .hub-card { padding: 14px; gap: 12px; }
-}
-</style>
+        @media (max-width: 500px) {
+            .cards { flex-direction: column; align-items: center; }
+            .card { width: 100%; max-width: 280px; }
+            .logo { font-size: 2.2rem; }
+        }
+    </style>
 </head>
 <body>
-
-<div class="bg-blob bg-blob-1"></div>
-<div class="bg-blob bg-blob-2"></div>
-
-<div class="app-shell">
-
-  <!-- Hero -->
-  <section class="hero">
-    <div class="logo-mark">V</div>
-    <h1>Video Hub</h1>
-    <p>你的视频分享与即时通讯中心</p>
-  </section>
-
-  <!-- Auth -->
-  <div class="auth-section">
-    <button class="btn btn-primary" onclick="alert('注册功能开发中')">注册</button>
-    <button class="btn btn-outline" onclick="alert('登录功能开发中')">登录</button>
-  </div>
-
-  <!-- Hubs -->
-  <div class="section-header">
-    <h2>Hub</h2>
-    <span>全部功能</span>
-  </div>
-
-  <div class="hub-grid">
-    <a class="hub-card" href="chat/">
-      <div class="hub-icon chat">💬</div>
-      <div class="hub-info">
-        <h3>Chat Hub</h3>
-        <p>在线聊天，即时通讯，智能回复</p>
-      </div>
-      <span class="hub-arrow">→</span>
-    </a>
-
-    <div class="hub-card" onclick="alert('视频功能开发中')">
-      <div class="hub-icon video">🎬</div>
-      <div class="hub-info">
-        <h3>Video Hub</h3>
-        <p>视频上传、浏览与分享</p>
-      </div>
-      <span class="hub-arrow">→</span>
+    <div class="container">
+        <div class="logo">开放创作者平台</div>
+        <div class="subtitle">创作 · 分享 · 连接</div>
+        <div class="cards">
+            <a href="upload.html" class="card">
+                <div class="icon">📤</div>
+                <h3>上传管理</h3>
+                <p>上传视频、管理副管理员、查看消息</p>
+            </a>
+            <a href="view.html" class="card">
+                <div class="icon">🎬</div>
+                <h3>观看视频</h3>
+                <p>浏览和播放视频、与管理员私信交流</p>
+            </a>
+        </div>
     </div>
-  </div>
-
-  <!-- Footer -->
-  <footer class="site-footer">
-    <p>Video Hub &copy; 2026<br>Built with ❤️</p>
-  </footer>
-
-</div>
-
 </body>
 </html>
