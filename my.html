@@ -231,8 +231,8 @@ async function loadMyVideos(){
 }
 async function loadAllVideos(){
     try{
-        const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json');
-        const data=JSON.parse(decodeBase64(r.content));
+        const r=await fetch('https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/videos.json?t='+Date.now());
+        const data=await r.json();
         allVideos=Array.isArray(data) ? data : (data.videos||[]);
     }catch(e){allVideos=[]}
 }
@@ -348,6 +348,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 </script>
 </body>
 </html>
+
 
 
 

@@ -862,8 +862,8 @@
 
         async function getVideos(){
             try{
-                const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/videos.json');
-                return JSON.parse(decodeBase64(data.content));
+                const r=await fetch('https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/videos.json?t='+Date.now());
+                return await r.json();
             }catch(e){return [];}
         }
 
