@@ -92,7 +92,7 @@ th{color:#8888aa;font-weight:500}
 <div class="tabs">
 <button class="tab active" data-tab="upload">视频上传</button>
 <button class="tab" data-tab="admins">管理副管理员</button>
-<button class="tab" data-tab="messages">消息中心</button>
+<button class="tab" data-tab="messages">私信记录</button>
 <button class="tab" data-tab="registrations">注册审核</button>
 <button class="tab" data-tab="announcements">公告管理</button>
 </div>
@@ -121,7 +121,7 @@ th{color:#8888aa;font-weight:500}
 <div id="adminList"><div style="color:#555577;text-align:center;padding:2rem">加载中...</div></div>
 </div>
 <div class="tab-panel" id="tab-messages">
-<h3 style="margin-bottom:1rem">消息中心</h3>
+<h3 style="margin-bottom:1rem">私信记录</h3>
 <div id="msgPanel"><div style="color:#555577;text-align:center;padding:2rem">加载中...</div></div>
 </div>
 <div class="tab-panel" id="tab-registrations">
@@ -318,55 +318,12 @@ async function loadMessagesPanel(){
   try{
     const data=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json');
     const all=JSON.parse(decodeBase64(data.content));
-    const msgs=all.messages||[];
-    if(msgs.length===0){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem">暂无消息</div>';return}
-    const grouped={};
-    msgs.forEach(m=>{
-      const key=m.from==='管理员'?m.to:m.from;
-      if(!grouped[key])grouped[key]=[];
-      grouped[key].push(m);
-    });
-    panel.innerHTML=Object.entries(grouped).map(([user,userMsgs])=>{
-      const mhtml=userMsgs.map(m=>{
-        const isAdmin=m.from==='管理员';
-        return `<div class="chat-msg-bubble ${isAdmin?'from-admin':'to-admin'}">
-<div style="font-size:0.72rem;color:#8899dd">${isAdmin?'管理员 → '+esc(m.to):esc(m.from)+' → 管理员'}</div>
-<div>${esc(m.content)}</div>
-<div style="font-size:0.68rem;color:#666;text-align:right">${fmtTime(m.timestamp)}</div></div>`;
-      }).join('');
-      return `<div class="chat-card">
-<div class="chat-card-header" onclick="this.parentElement.querySelector('.chat-card-body').classList.toggle('collapsed')">
-<h4>${esc(user)} <span style="font-size:0.75rem;color:#555577">(${userMsgs.length}条)</span></h4></div>
-<div class="chat-card-body">${mhtml}</div>
-<div class="chat-reply-area"><input type="text" placeholder="回复 ${esc(user)}..." data-user="${esc(user)}">
-<button class="btn btn-primary btn-sm">发送</button></div></div>`;
-    }).join('');
-    // Bind reply buttons
-    panel.querySelectorAll('.chat-reply-area button').forEach(b=>{
-      b.addEventListener('click',function(){
-        const input=this.parentElement.querySelector('input');
-        adminReply(input.dataset.user,input.value);
-      });
-    });
-    panel.querySelectorAll('.chat-reply-area input').forEach(i=>{
-      i.addEventListener('keydown',function(e){if(e.key==='Enter')adminReply(this.dataset.user,this.value)});
-    });
-  }catch(e){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem">暂无消息</div>'}
-}
-
-async function adminReply(toUser,content){
-  if(!content||!content.trim())return;
-  try{
-    let data={messages:[]};
-    try{const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json');data=JSON.parse(decodeBase64(d.content))}catch(e){}
-    data.messages.push({id:Date.now().toString(),from:'管理员',to:toUser,content:content.trim(),timestamp:new Date().toISOString()});
-    const json=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
-    let sha=null;
-    try{const d=await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json');sha=d.sha}catch(e){}
-    const body={message:'Admin reply to '+toUser,content:json};if(sha)body.sha=sha;
-    await githubAPI('/repos/'+config.user+'/'+config.repo+'/contents/messages.json',{method:'PUT',body:JSON.stringify(body)});
-    showToast('已回复 '+toUser);loadMessagesPanel();
-  }catch(e){showToast('发送失败: '+e.message,'error')}
+    const msgs=(all.messages||[]).slice().reverse();
+    if(msgs.length===0){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem">暂无私信</div>';return}
+    panel.innerHTML='<table><thead><tr><th>时间</th><th>发送者</th><th>接收者</th><th>内容</th></tr></thead><tbody>'+
+      msgs.map(m=>'<tr><td style="white-space:nowrap">'+fmtTime(m.timestamp)+'</td><td>'+esc(m.from)+'</td><td>'+esc(m.to)+'</td><td>'+esc(m.content)+'</td></tr>').join('')+
+      '</tbody></table>';
+  }catch(e){panel.innerHTML='<div style="color:#555577;text-align:center;padding:2rem">暂无私信</div>'}
 }
 
 // Registrations
@@ -521,4 +478,5 @@ async function deleteAnnouncement(index){
 </script>
 </body>
 </html>
+
 

@@ -57,6 +57,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-sm{padding:0.35rem 0.8rem;font-size:0.78rem}
 .btn-block{display:block;width:100%;text-align:center}
 
+.follow-btn-row{margin-top:0.75rem;display:flex;gap:0.5rem;justify-content:center;align-items:center}
+.btn-follow{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:0.45rem 1.2rem;border-radius:20px;font-size:0.85rem;font-weight:600;cursor:pointer;transition:0.2s}
+.btn-follow.following{background:#3a3a5a;color:var(--muted)}
+.btn-dm{background:transparent;color:var(--muted);border:1px solid #2a2a4a;padding:0.45rem 1.2rem;border-radius:20px;font-size:0.85rem;font-weight:600;cursor:pointer;transition:0.2s}
+.btn-dm:hover{color:var(--text);border-color:var(--accent)}
+
+.follow-section{margin-top:1rem}
+.follow-tabs{display:flex;gap:0.5rem;margin-bottom:0.75rem}
+.follow-tab{flex:1;padding:0.5rem;background:var(--card);border:1px solid #1a1a3a;border-radius:8px;color:var(--muted);font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;transition:0.2s}
+.follow-tab.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent}
+.user-card{background:var(--card);border-radius:var(--radius);padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;cursor:pointer;transition:0.2s}
+.user-card:hover{background:#1a1a3a}
+.user-avatar-sm{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#fff;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:0.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-actions{display:flex;gap:0.4rem}
+.user-actions .btn-sm{padding:0.3rem 0.6rem;font-size:0.72rem;border-radius:6px}
+.follow-list{display:none}
+.follow-list.active{display:block}
+
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:0.5rem 1.2rem;border-radius:20px;font-size:0.85rem;z-index:9999;opacity:0;pointer-events:none;transition:opacity 0.3s}
 .toast.show{opacity:1}
 
@@ -78,7 +98,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <div class="profile-avatar" id="profileAvatar">?</div>
             <div class="profile-name" id="profileName"></div>
             <div class="profile-count" id="profileCount">0 个作品</div>
+            <div class="follow-btn-row" id="followBtnRow" style="display:none"></div>
         </div>
+        <div id="followTabsSection" style="display:none"></div>
     </div>
     <div id="emptyState" class="empty-state">
         <div class="empty-icon">🎬</div>
@@ -127,6 +149,8 @@ const _tk=atob(_p1+_p2+_p3+_p4);
 let config={user:'wlbaaa',repo:'video-hub',token:_tk};
 let allVideos=[];
 let currentUser=null;
+let followersData={followers:[]};
+let followersSha=null;
 
 async function sha256(msg){
     const buf=new TextEncoder().encode(msg);
@@ -186,10 +210,14 @@ function updateUI(){
         document.getElementById('profileName').textContent=currentUser;
         document.getElementById('btnAccount').textContent='退出';
         document.getElementById('btnAccount').onclick=logout;
+        if(!window._viewingUser){
+            loadFollowers().then(()=>renderFollowTabs());
+        }
     }else{
         document.getElementById('profileSection').style.display='none';
         document.getElementById('btnAccount').textContent='登录';
         document.getElementById('btnAccount').onclick=toggleLogin;
+        document.getElementById('followTabsSection').style.display='none';
     }
 }
 
@@ -276,7 +304,6 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
     const params=new URLSearchParams(window.location.search);
     const targetUser=params.get('user');
     if(!targetUser)return;
-    // Mark as viewing other user's page
     window._viewingUser=targetUser;
     document.getElementById('btnAccount').style.display='none';
     document.getElementById('profileSection').style.display='block';
@@ -284,7 +311,6 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
     document.getElementById('profileAvatar').style.background=avatarColor(targetUser);
     document.getElementById('profileName').textContent=targetUser;
     document.getElementById('emptyState').style.display='none';
-    // Load videos for this user
     (async function(){
         await loadAllVideos();
         const vids=allVideos.filter(v=>v.uploaded_by===targetUser);
@@ -295,26 +321,28 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
             document.getElementById('emptyTitle').textContent='暂无作品';
             document.getElementById('emptyDesc').textContent='该用户还没有发布视频';
             document.getElementById('emptyLoginBtn').style.display='none';
-            return;
-        }
-        grid.innerHTML=vids.map(v=>{
-            const videoUrl='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+v.path;
-            const dateStr=formatDate(v.created_at||v.uploadDate);
-            return `
-            <div class="video-card" onclick="playVideo('${v.id}')">
-                <div class="video-thumb">
-                    <video src="${videoUrl}#t=1" muted preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>
-                    <div class="play-icon">▶</div>
-                </div>
-                <div class="video-info">
-                    <div class="video-title">${escapeHtml(v.title)}</div>
-                    <div class="video-meta">
-                        <span>${formatSize(v.size||0)}</span>
-                        <span>${dateStr}</span>
+        }else{
+            grid.innerHTML=vids.map(v=>{
+                const videoUrl='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+v.path;
+                const dateStr=formatDate(v.created_at||v.uploadDate);
+                return `
+                <div class="video-card" onclick="playVideo('${v.id}')">
+                    <div class="video-thumb">
+                        <video src="${videoUrl}#t=1" muted preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>
+                        <div class="play-icon">▶</div>
+                    </div>
+                    <div class="video-info">
+                        <div class="video-title">${escapeHtml(v.title)}</div>
+                        <div class="video-meta">
+                            <span>${formatSize(v.size||0)}</span>
+                            <span>${dateStr}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `}).join('');
+            `}).join('');
+        }
+        await loadFollowers();
+        renderFollowBtn(targetUser);
     })();
 })();
 
@@ -345,9 +373,104 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
         loadMyVideos();
     }catch(e){}
 })();
+
+async function loadFollowers(){
+    try{
+        const r=await fetch('https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/followers.json?t='+Date.now());
+        const data=await r.json();
+        followersData=Array.isArray(data)?{followers:data}:(data||{followers:[]});
+    }catch(e){
+        followersData={followers:[]};
+    }
+    try{
+        const info=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/followers.json');
+        followersSha=info.sha;
+    }catch(e){
+        followersSha=null;
+    }
+}
+
+function isFollowing(follower,following){
+    return followersData.followers.some(f=>f.follower===follower&&f.following===following);
+}
+
+function renderFollowBtn(targetUser){
+    const row=document.getElementById('followBtnRow');
+    if(!currentUser||currentUser===targetUser){
+        row.style.display='none';
+        row.innerHTML='';
+        return;
+    }
+    row.style.display='flex';
+    const followed=isFollowing(currentUser,targetUser);
+    row.innerHTML=`<button class="btn-follow ${followed?'following':''}" onclick="toggleFollow('${escapeHtml(targetUser)}')">${followed?'已关注':'关注'}</button><button class="btn-dm" onclick="goToChat('${escapeHtml(targetUser)}')">私信</button>`;
+}
+
+async function toggleFollow(targetUser){
+    if(!currentUser){showToast('请先登录');return;}
+    const followed=isFollowing(currentUser,targetUser);
+    if(followed){
+        followersData.followers=followersData.followers.filter(f=>!(f.follower===currentUser&&f.following===targetUser));
+    }else{
+        followersData.followers.push({follower:currentUser,following:targetUser,created_at:new Date().toISOString()});
+    }
+    try{
+        const content=btoa(unescape(encodeURIComponent(JSON.stringify(followersData,null,2))));
+        const body={message:(followed?'取消关注':'关注')+' '+targetUser,content:content};
+        if(followersSha) body.sha=followersSha;
+        const res=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/followers.json',{method:'PUT',body:JSON.stringify(body)});
+        if(res&&res.content&&res.content.sha) followersSha=res.content.sha;
+        showToast(followed?'已取消关注':'已关注');
+        renderFollowBtn(targetUser);
+        if(!window._viewingUser) renderFollowTabs();
+    }catch(e){
+        showToast('操作失败: '+e.message);
+        await loadFollowers();
+        renderFollowBtn(targetUser);
+        if(!window._viewingUser) renderFollowTabs();
+    }
+}
+
+function renderFollowTabs(){
+    const sec=document.getElementById('followTabsSection');
+    if(!currentUser||window._viewingUser){
+        sec.style.display='none';
+        sec.innerHTML='';
+        return;
+    }
+    sec.style.display='block';
+    const following=followersData.followers.filter(f=>f.follower===currentUser);
+    const followers=followersData.followers.filter(f=>f.following===currentUser);
+    sec.innerHTML=`<div class="follow-section"><div class="follow-tabs"><div class="follow-tab active" onclick="switchFollowTab('following')" id="tabFollowing">我关注的 (${following.length})</div><div class="follow-tab" onclick="switchFollowTab('followers')" id="tabFollowers">关注我的 (${followers.length})</div></div><div class="follow-list active" id="listFollowing">${renderUserList(following,'following')}</div><div class="follow-list" id="listFollowers">${renderUserList(followers,'followers')}</div></div>`;
+}
+
+function switchFollowTab(tab){
+    document.getElementById('tabFollowing').classList.toggle('active',tab==='following');
+    document.getElementById('tabFollowers').classList.toggle('active',tab==='followers');
+    document.getElementById('listFollowing').classList.toggle('active',tab==='following');
+    document.getElementById('listFollowers').classList.toggle('active',tab==='followers');
+}
+
+function renderUserList(list,type){
+    if(list.length===0){
+        return '<div class="empty-state" style="padding:2rem 1rem"><h3 style="color:var(--muted);font-size:0.9rem">暂无'+(type==='following'?'关注的人':'粉丝')+'</h3></div>';
+    }
+    const users=type==='following'?list.map(f=>f.following):list.map(f=>f.follower);
+    const unique=[...new Set(users)];
+    return unique.map(u=>`<div class="user-card" onclick="goToUserProfile('${escapeHtml(u)}')"><div class="user-avatar-sm" style="background:${avatarColor(u)}">${u[0].toUpperCase()}</div><div class="user-info"><div class="user-name">${escapeHtml(u)}</div></div><div class="user-actions"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();goToChat('${escapeHtml(u)}')">私信</button></div></div>`).join('');
+}
+
+function goToChat(user){
+    window.location.href='view.html?chat='+encodeURIComponent(user);
+}
+
+function goToUserProfile(user){
+    window.location.href='my.html?user='+encodeURIComponent(user);
+}
 </script>
 </body>
 </html>
+
 
 
 
