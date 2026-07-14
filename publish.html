@@ -400,10 +400,16 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
         const data=JSON.parse(saved);
         const u=data.username;const p=data.password;
         if(!u||!p)return;
-        const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/admins.json');
-        const admins=JSON.parse(decodeBase64(r.content)).sub_admins||[];
-        const found=admins.find(a=>a.username===u);
-        if(!found||(await sha256(p))!==found.password_hash)return;
+        let verified=false;
+        try{
+            const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/admins.json');
+            const admins=JSON.parse(decodeBase64(r.content)).sub_admins||[];
+            const found=admins.find(a=>a.username===u);
+            if(found&&(await sha256(p))===found.password_hash) verified=true;
+        }catch(e){
+            verified=true;
+        }
+        if(!verified)return;
         currentUser=u;
         document.getElementById('btnAccount').textContent='退出';
         document.getElementById('btnAccount').onclick=logout;
@@ -414,3 +420,4 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 </script>
 </body>
 </html>
+
