@@ -527,8 +527,6 @@
                 const list=data.announcements||[];
                 if(list.length===0)return;
                 const a=list[0];
-                const seen=localStorage.getItem('vh_seen_announce');
-                if(seen===a.id)return;
                 document.getElementById('annTitle').textContent=a.title;
                 document.getElementById('annContent').textContent=a.content;
                 if(a.button_text&&a.button_url){
@@ -536,23 +534,14 @@
                     btn.textContent=a.button_text;
                     btn.href=a.button_url;
                     btn.style.display='inline-block';
+                }else{
+                    document.getElementById('annBtn').style.display='none';
                 }
                 document.getElementById('announceModal').classList.remove('hidden');
             }catch(e){}
         }
         function closeAnnounceModal(){
             document.getElementById('announceModal').classList.add('hidden');
-            try{
-                const r=JSON.parse(document.getElementById('annTitle').textContent);
-            }catch(e){}
-            try{
-                fetch('https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/announcements.json?t='+Date.now())
-                .then(r=>r.json())
-                .then(data=>{
-                    const list=data.announcements||[];
-                    if(list.length>0)localStorage.setItem('vh_seen_announce',list[0].id);
-                });
-            }catch(e){}
         }
 
         async function loadVideos(){
@@ -932,4 +921,5 @@
     </div>
 </body>
 </html>
+
 
