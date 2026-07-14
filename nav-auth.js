@@ -16,9 +16,9 @@ function render(){
     nav.className='vh-nav-auth';nav.id='vhNavAuth';
     var sess=(window.VHAuth&&VHAuth.currentUser)?VHAuth.currentUser():null;
     if(sess&&sess.username){
-        nav.innerHTML='<a class="vh-logo" href="view.html">Video Hub</a><div class="vh-user-info"><span class="vh-role-badge">'+(sess.role==='sub_admin'||sess.role==='admin'?'管理员':'用户')+'</span><span class="vh-nick">'+esc(sess.nickname||sess.username)+'</span><button class="vh-btn vh-btn-logout" onclick="VHAuth.logout();location.reload()">退出</button></div>';
+        nav.innerHTML='<a class="vh-logo" href="view.html">开放创作者平台</a><div class="vh-user-info"><span class="vh-role-badge">'+(sess.role==='sub_admin'||sess.role==='admin'?'管理员':'用户')+'</span><span class="vh-nick">'+esc(sess.nickname||sess.username)+'</span><button class="vh-btn vh-btn-logout" onclick="VHAuth.logout();location.reload()">退出</button></div>';
     }else{
-        nav.innerHTML='<a class="vh-logo" href="view.html">Video Hub</a><div><a class="vh-btn" href="auth.html">登录</a></div>';
+        nav.innerHTML='<a class="vh-logo" href="view.html">开放创作者平台</a><div><a class="vh-btn" href="auth.html">登录</a></div>';
     }
     document.body.prepend(nav);
     document.body.classList.add('vh-nav-padding');
