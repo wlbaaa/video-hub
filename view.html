@@ -392,6 +392,19 @@
     </div>
 
     <!-- Upload Panel -->
+    <!-- Announcement Modal -->
+    <div class="key-modal-overlay hidden" id="announceModal">
+        <div class="key-modal" style="max-width:420px;text-align:left">
+            <h3 style="margin-bottom:0.5rem">📢 公告</h3>
+            <div id="annTitle" style="font-weight:600;margin-bottom:0.3rem"></div>
+            <div id="annContent" style="color:#a0a0c0;font-size:0.9rem;line-height:1.5;margin-bottom:1rem"></div>
+            <a id="annBtn" class="btn btn-primary" style="display:none;width:auto;padding:0.5rem 1.2rem;font-size:0.85rem;text-decoration:none" target="_blank"></a>
+            <div style="text-align:right;margin-top:1rem">
+                <button class="btn btn-ghost btn-sm" onclick="closeAnnounceModal()">知道了</button>
+            </div>
+        </div>
+    </div>
+
     <div class="upload-overlay" id="uploadOverlay">
         <div class="upload-panel">
             <h3>创建作品</h3>
@@ -501,9 +514,45 @@
                 showToast('欢迎, '+currentUser,'success');
                 loadVideos();
                 startChatPoll();
+                loadAnnounceModal();
             }catch(error){
                 showToast('连接失败: '+error.message,'error');
             }
+        }
+
+        async function loadAnnounceModal(){
+            try{
+                const r=await fetch('https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/announcements.json?t='+Date.now());
+                const data=await r.json();
+                const list=data.announcements||[];
+                if(list.length===0)return;
+                const a=list[0];
+                const seen=localStorage.getItem('vh_seen_announce');
+                if(seen===a.id)return;
+                document.getElementById('annTitle').textContent=a.title;
+                document.getElementById('annContent').textContent=a.content;
+                if(a.button_text&&a.button_url){
+                    const btn=document.getElementById('annBtn');
+                    btn.textContent=a.button_text;
+                    btn.href=a.button_url;
+                    btn.style.display='inline-block';
+                }
+                document.getElementById('announceModal').classList.remove('hidden');
+            }catch(e){}
+        }
+        function closeAnnounceModal(){
+            document.getElementById('announceModal').classList.add('hidden');
+            try{
+                const r=JSON.parse(document.getElementById('annTitle').textContent);
+            }catch(e){}
+            try{
+                fetch('https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/announcements.json?t='+Date.now())
+                .then(r=>r.json())
+                .then(data=>{
+                    const list=data.announcements||[];
+                    if(list.length>0)localStorage.setItem('vh_seen_announce',list[0].id);
+                });
+            }catch(e){}
         }
 
         async function loadVideos(){
@@ -883,3 +932,4 @@
     </div>
 </body>
 </html>
+
