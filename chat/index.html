@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Chat</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: oklch(0.97 0.005 260);
+  --surface: oklch(1 0 0);
+  --bubble-self: oklch(0.68 0.16 160);
+  --bubble-other: oklch(1 0 0);
+  --text-primary: oklch(0.18 0.01 260);
+  --text-secondary: oklch(0.55 0.01 260);
+  --text-light: oklch(0.97 0 0);
+  --border: oklch(0.90 0.005 260);
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.06);
+  --shadow-md: 0 4px 16px oklch(0 0 0 / 0.1);
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --font-sans: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', system-ui, sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-primary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Phone frame wrapper */
+.app-container {
+  width: 100%;
+  max-width: 480px;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  position: relative;
+  box-shadow: var(--shadow-md);
+}
+
+@media (min-width: 481px) {
+  body {
+    background: oklch(0.20 0.02 260);
+  }
+  .app-container {
+    height: min(100vh - 32px, 900px);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+}
+
+/* Header */
+.chat-header {
+  background: var(--surface);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+}
+
+.back-btn {
+  width: 36px;
+  height: 36px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 50%;
+  color: var(--text-primary);
+  transition: background 0.2s;
+}
+.back-btn:active { background: var(--border); }
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, oklch(0.65 0.18 260), oklch(0.60 0.16 290));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.avatar::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: oklch(0.58 0.20 145);
+  border: 2px solid var(--surface);
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+.header-info { flex: 1; min-width: 0; }
+.header-name {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.header-status {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  transition: background 0.2s;
+  font-size: 20px;
+}
+.icon-btn:active { background: var(--border); }
+
+/* Messages area */
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.messages-area::-webkit-scrollbar { width: 0; }
+
+/* Time divider */
+.time-divider {
+  text-align: center;
+  padding: 8px 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+/* Message bubble */
+.message-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 78%;
+  animation: msgIn 0.3s ease-out;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message-row.self { align-self: flex-end; }
+.message-row.other { align-self: flex-start; }
+
+.bubble {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  line-height: 1.55;
+  word-break: break-word;
+  position: relative;
+}
+
+.message-row.self .bubble {
+  background: var(--bubble-self);
+  color: var(--text-light);
+  border-bottom-right-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.message-row.other .bubble {
+  background: var(--bubble-other);
+  color: var(--text-primary);
+  border-bottom-left-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.message-time {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  padding: 0 4px;
+}
+
+.message-row.self .message-time { text-align: right; }
+
+/* Typing indicator */
+.typing-indicator {
+  align-self: flex-start;
+  display: flex;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--bubble-other);
+  border-radius: var(--radius-md);
+  border-bottom-left-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: oklch(0.75 0.03 260);
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* Empty state */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  font-size: 56px;
+  opacity: 0.4;
+}
+
+.empty-text {
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Input area */
+.input-area {
+  background: var(--surface);
+  padding: 10px 12px calc(10px + var(--safe-bottom));
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  position: relative;
+  z-index: 10;
+}
+
+.input-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.input-wrapper {
+  flex: 1;
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: flex-end;
+  padding: 2px 4px;
+  transition: box-shadow 0.2s;
+}
+
+.input-wrapper:focus-within {
+  box-shadow: 0 0 0 2px oklch(0.68 0.16 160 / 0.4);
+}
+
+.input-wrapper textarea {
+  flex: 1;
+  border: none;
+  background: none;
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  resize: none;
+  padding: 8px 10px;
+  max-height: 120px;
+  min-height: 20px;
+  height: 20px;
+  overflow-y: auto;
+}
+
+.input-wrapper textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+.input-wrapper textarea::-webkit-scrollbar { width: 0; }
+
+.send-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: var(--bubble-self);
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: transform 0.15s, opacity 0.15s;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.send-btn:not(:disabled) {
+  opacity: 1;
+}
+
+.send-btn:not(:disabled):active {
+  transform: scale(0.92);
+}
+
+/* System message */
+.system-msg {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 6px 0;
+}
+
+/* Responsive adjustments for very small screens */
+@media (max-width: 360px) {
+  .message-row { max-width: 85%; }
+  .bubble { font-size: 14px; padding: 8px 12px; }
+  .input-area { padding: 8px 10px calc(8px + var(--safe-bottom)); gap: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-row { animation: none; }
+  .typing-dot { animation: none; opacity: 0.4; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- Header -->
+  <header class="chat-header">
+    <button class="back-btn" aria-label="返回">&larr;</button>
+    <div class="avatar">🤖</div>
+    <div class="header-info">
+      <div class="header-name">智能助手</div>
+      <div class="header-status">在线</div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" aria-label="更多" title="清空对话" id="clearBtn">&#8942;</button>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  <main class="messages-area" id="messagesArea">
+    <div class="time-divider" id="dateLabel"></div>
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">💬</div>
+      <div class="empty-text">开始聊天吧<br>发送一条消息试试</div>
+    </div>
+  </main>
+
+  <!-- Input -->
+  <footer class="input-area">
+    <div class="input-wrapper">
+      <textarea id="msgInput" rows="1" placeholder="输入消息..." maxlength="1000" autofocus></textarea>
+    </div>
+    <button class="send-btn" id="sendBtn" disabled aria-label="发送">&#10148;</button>
+  </footer>
+
+</div>
+
+<script>
+(function() {
+  const messagesArea = document.getElementById('messagesArea');
+  const msgInput = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const emptyState = document.getElementById('emptyState');
+  const dateLabel = document.getElementById('dateLabel');
+  const clearBtn = document.getElementById('clearBtn');
+
+  const STORAGE_KEY = 'chat_messages';
+  const AUTO_REPLY_DELAY = [800, 1500, 2200];
+
+  const autoReplies = [
+    '你好呀！有什么可以帮你的吗？',
+    '这个想法很有意思！',
+    '让我想想……嗯，我觉得可以试试看。',
+    '哈哈，确实如此！',
+    '稍等，我正在处理你的问题~',
+    '好的，我明白了！',
+    '还有其他问题吗？我随时在线。',
+    '你说得对，我完全同意。',
+    '这是个好问题，我的建议是先理清思路再动手。',
+    '没问题，交给我吧！',
+    '收到了，我会记住的。',
+    '有道理，学到了新东西！'
+  ];
+
+  let isTyping = false;
+  let messages = [];
+
+  // Load messages
+  function loadMessages() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        messages = JSON.parse(raw);
+        // Handle old format
+        if (!Array.isArray(messages)) messages = [];
+      }
+    } catch (e) {
+      messages = [];
+    }
+  }
+
+  function saveMessages() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    } catch (e) {}
+  }
+
+  function formatTime(date) {
+    const h = date.getHours().toString().padStart(2, '0');
+    const m = date.getMinutes().toString().padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
+  function formatDate(date) {
+    const now = new Date();
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diff = today - d;
+
+    if (diff === 0) return '今天';
+    if (diff === 86400000) return '昨天';
+    const y = date.getFullYear();
+    const mo = (date.getMonth() + 1).toString().padStart(2, '0');
+    const da = date.getDate().toString().padStart(2, '0');
+    return `${y}年${mo}月${da}日`;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function autoResize() {
+    msgInput.style.height = '20px';
+    msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
+  }
+
+  function updateSendBtn() {
+    const hasText = msgInput.value.trim().length > 0;
+    sendBtn.disabled = !hasText;
+  }
+
+  function updateEmptyState() {
+    if (messages.length === 0) {
+      emptyState.style.display = 'flex';
+    } else {
+      emptyState.style.display = 'none';
+    }
+  }
+
+  function shouldShowDateDivider(prevMsg, currMsg) {
+    if (!prevMsg) return true;
+    const prevDate = new Date(prevMsg.timestamp);
+    const currDate = new Date(currMsg.timestamp);
+    return prevDate.toDateString() !== currDate.toDateString();
+  }
+
+  function renderMessages() {
+    messagesArea.innerHTML = '';
+    messagesArea.appendChild(dateLabel);
+
+    let lastDateDivider = dateLabel;
+    let hasContent = false;
+
+    messages.forEach((msg, i) => {
+      const prevMsg = i > 0 ? messages[i - 1] : null;
+
+      if (shouldShowDateDivider(prevMsg, msg)) {
+        const divider = document.createElement('div');
+        divider.className = 'time-divider';
+        divider.textContent = formatDate(new Date(msg.timestamp));
+        messagesArea.appendChild(divider);
+        lastDateDivider = divider;
+      }
+
+      const row = document.createElement('div');
+      row.className = `message-row ${msg.isSelf ? 'self' : 'other'}`;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = escapeHtml(msg.text);
+
+      const time = document.createElement('div');
+      time.className = 'message-time';
+      time.textContent = formatTime(new Date(msg.timestamp));
+
+      row.appendChild(bubble);
+      row.appendChild(time);
+      messagesArea.appendChild(row);
+      hasContent = true;
+    });
+
+    // Keep empty state as last child
+    messagesArea.appendChild(emptyState);
+    updateEmptyState();
+
+    // Scroll to bottom
+    requestAnimationFrame(() => {
+      messagesArea.scrollTop = messagesArea.scrollHeight;
+    });
+  }
+
+  function addMessage(text, isSelf) {
+    messages.push({
+      text: text,
+      isSelf: isSelf,
+      timestamp: new Date().toISOString()
+    });
+    saveMessages();
+    renderMessages();
+  }
+
+  function showTyping() {
+    if (isTyping) return;
+    isTyping = true;
+
+    const indicator = document.createElement('div');
+    indicator.className = 'typing-indicator';
+    indicator.id = 'typingIndicator';
+    indicator.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    messagesArea.insertBefore(indicator, emptyState);
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+  }
+
+  function hideTyping() {
+    isTyping = false;
+    const indicator = document.getElementById('typingIndicator');
+    if (indicator) indicator.remove();
+  }
+
+  function getAutoReply() {
+    return autoReplies[Math.floor(Math.random() * autoReplies.length)];
+  }
+
+  function triggerAutoReply() {
+    showTyping();
+    const delay = AUTO_REPLY_DELAY[Math.floor(Math.random() * AUTO_REPLY_DELAY.length)];
+
+    setTimeout(() => {
+      hideTyping();
+      addMessage(getAutoReply(), false);
+    }, delay);
+  }
+
+  function sendMessage() {
+    const text = msgInput.value.trim();
+    if (!text || isTyping) return;
+
+    addMessage(text, true);
+    msgInput.value = '';
+    msgInput.style.height = '20px';
+    updateSendBtn();
+    msgInput.focus();
+
+    triggerAutoReply();
+  }
+
+  function clearChat() {
+    if (messages.length === 0) return;
+    if (confirm('确定要清空所有聊天记录吗？')) {
+      messages = [];
+      saveMessages();
+      renderMessages();
+    }
+  }
+
+  // Event listeners
+  msgInput.addEventListener('input', () => {
+    autoResize();
+    updateSendBtn();
+  });
+
+  msgInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  sendBtn.addEventListener('click', sendMessage);
+  clearBtn.addEventListener('click', clearChat);
+
+  // Init
+  loadMessages();
+
+  // Update date label
+  const today = new Date();
+  dateLabel.textContent = formatDate(today);
+
+  renderMessages();
+
+  // Focus input on load
+  setTimeout(() => msgInput.focus(), 300);
+})();
+</script>
+</body>
+</html>
