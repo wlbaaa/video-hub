@@ -29,7 +29,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .video-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
 .video-card{background:var(--card);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:transform 0.2s}
 .video-card:active{transform:scale(0.97)}
-.video-thumb{width:100%;aspect-ratio:16/10;background:#1a1a3a;display:flex;align-items:center;justify-content:center;font-size:2.5rem;position:relative}
+.video-thumb{width:100%;aspect-ratio:16/10;background:#1a1a3a;position:relative;overflow:hidden}
+.video-thumb video{width:100%;height:100%;object-fit:cover;display:block}
 .video-thumb .play-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;opacity:0;transition:opacity 0.2s}
 .video-thumb:hover .play-icon{opacity:1}
 .video-info{padding:0.5rem 0.6rem}
@@ -209,35 +210,41 @@ async function loadMyVideos(){
     }
     es.style.display='none';
     document.getElementById('emptyLoginBtn').style.display='none';
-    grid.innerHTML=myVids.map(v=>`
+    grid.innerHTML=myVids.map(v=>{
+        const videoUrl='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+v.path;
+        const dateStr=formatDate(v.created_at||v.uploadDate);
+        return `
         <div class="video-card" onclick="playVideo('${v.id}')">
-            <div class="video-thumb"><span>🎬</span><div class="play-icon">▶️</div></div>
+            <div class="video-thumb">
+                <video src="${videoUrl}#t=1" muted preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>
+                <div class="play-icon">▶</div>
+            </div>
             <div class="video-info">
                 <div class="video-title">${escapeHtml(v.title)}</div>
                 <div class="video-meta">
                     <span>${formatSize(v.size||0)}</span>
-                    <span>${formatDate(v.created_at)}</span>
+                    <span>${dateStr}</span>
                 </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 async function loadAllVideos(){
     try{
         const r=await githubAPI('repos/'+config.user+'/'+config.repo+'/contents/videos.json');
-        allVideos=(JSON.parse(decodeBase64(r.content))).videos||[];
+        const data=JSON.parse(decodeBase64(r.content));
+        allVideos=Array.isArray(data) ? data : (data.videos||[]);
     }catch(e){allVideos=[]}
 }
 
 function playVideo(id){
     const v=allVideos.find(x=>x.id===id);
     if(!v)return;
-    const ext=(v.filename||'a.mp4').split('.').pop();
-    const url='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/videos/'+v.id+'.'+ext;
+    const url='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+v.path;
     document.getElementById('modalVideo').src=url;
     document.getElementById('modalTitle').textContent=v.title;
     document.getElementById('modalDesc').textContent=v.description||'';
-    document.getElementById('modalMeta').textContent=formatSize(v.size)+' · '+formatDate(v.created_at)+' · '+escapeHtml(v.uploaded_by||'');
+    document.getElementById('modalMeta').textContent=formatSize(v.size)+' · '+formatDate(v.created_at||v.uploadDate)+' · '+escapeHtml(v.uploaded_by||'管理员');
     document.getElementById('modalOverlay').classList.add('visible');
 }
 function closeModal(){
