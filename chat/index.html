@@ -3,26 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Chat</title>
+<title>Chat Hub</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: oklch(0.97 0.005 260);
+  --bg: oklch(0.97 0.004 260);
   --surface: oklch(1 0 0);
+  --surface-2: oklch(0.96 0.004 260);
+  --accent: oklch(0.58 0.20 160);
+  --accent-hover: oklch(0.52 0.18 160);
+  --danger: oklch(0.55 0.22 20);
+  --text: oklch(0.15 0.01 260);
+  --text-secondary: oklch(0.50 0.01 260);
+  --text-muted: oklch(0.65 0.01 260);
+  --border: oklch(0.89 0.005 260);
   --bubble-self: oklch(0.68 0.16 160);
   --bubble-other: oklch(1 0 0);
-  --text-primary: oklch(0.18 0.01 260);
-  --text-secondary: oklch(0.55 0.01 260);
-  --text-light: oklch(0.97 0 0);
-  --border: oklch(0.90 0.005 260);
-  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.06);
-  --shadow-md: 0 4px 16px oklch(0 0 0 / 0.1);
   --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --font-sans: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', system-ui, sans-serif;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+  --font: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', system-ui, sans-serif;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.06);
+  --shadow-md: 0 4px 16px oklch(0 0 0 / 0.08);
 }
 
 html, body {
@@ -33,15 +38,14 @@ html, body {
 }
 
 body {
-  font-family: var(--font-sans);
-  background: var(--bg);
-  color: var(--text-primary);
+  font-family: var(--font);
+  background: oklch(0.20 0.02 260);
+  color: var(--text);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* Phone frame wrapper */
 .app-container {
   width: 100%;
   max-width: 480px;
@@ -51,142 +55,285 @@ body {
   flex-direction: column;
   background: var(--bg);
   position: relative;
-  box-shadow: var(--shadow-md);
 }
 
 @media (min-width: 481px) {
-  body {
-    background: oklch(0.20 0.02 260);
-  }
   .app-container {
     height: min(100vh - 32px, 900px);
     border-radius: 20px;
     overflow: hidden;
+    box-shadow: 0 8px 40px oklch(0 0 0 / 0.3);
   }
 }
 
-/* Header */
-.chat-header {
+/* ========= HEADER ========= */
+.header {
   background: var(--surface);
   padding: 12px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-  position: relative;
-  z-index: 10;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 10;
 }
 
-.back-btn {
-  width: 36px;
-  height: 36px;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: none;
-  cursor: pointer;
+.header .back-btn {
+  width: 36px; height: 36px;
+  border: none; background: none;
   border-radius: 50%;
-  color: var(--text-primary);
-  transition: background 0.2s;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text);
+  flex-shrink: 0;
 }
-.back-btn:active { background: var(--border); }
+.header .back-btn:active { background: var(--surface-2); }
 
-.avatar {
-  width: 42px;
-  height: 42px;
+.header .avatar-sm {
+  width: 38px; height: 38px;
   border-radius: 50%;
   background: linear-gradient(135deg, oklch(0.65 0.18 260), oklch(0.60 0.16 290));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
   color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
   flex-shrink: 0;
-  position: relative;
-}
-
-.avatar::after {
-  content: '';
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: oklch(0.58 0.20 145);
-  border: 2px solid var(--surface);
-  position: absolute;
-  bottom: 0;
-  right: 0;
 }
 
 .header-info { flex: 1; min-width: 0; }
-.header-name {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.3;
-}
-.header-status {
-  font-size: 12px;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+.header-name { font-size: 16px; font-weight: 600; }
+.header-status { font-size: 11px; color: var(--text-muted); }
 
-.header-actions {
+/* ========= AUTH VIEW ========= */
+.auth-view {
+  flex: 1;
   display: flex;
-  gap: 4px;
-}
-
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  border-radius: 50%;
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-primary);
-  transition: background 0.2s;
-  font-size: 20px;
+  padding: 32px 28px;
+  gap: 20px;
 }
-.icon-btn:active { background: var(--border); }
 
-/* Messages area */
+.auth-view .logo {
+  width: 72px; height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--accent), oklch(0.65 0.18 250));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; color: white;
+  margin-bottom: 4px;
+}
+
+.auth-view h2 { font-size: 22px; font-weight: 700; }
+.auth-view p { font-size: 13px; color: var(--text-secondary); text-align: center; }
+
+.input-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.input-group input {
+  width: 100%; height: 48px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 16px;
+  font-family: var(--font);
+  font-size: 15px;
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+  border-color: var(--accent);
+}
+
+.input-group input::placeholder { color: var(--text-muted); }
+
+.btn {
+  width: 100%; height: 48px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s, opacity 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+
+.btn-text {
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  height: auto;
+  width: auto;
+}
+
+.auth-error {
+  color: var(--danger);
+  font-size: 13px;
+  text-align: center;
+  min-height: 18px;
+}
+
+/* ========= CONTACTS VIEW ========= */
+.contacts-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.search-bar {
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.search-input {
+  width: 100%; height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding: 0 14px;
+  font-family: var(--font);
+  font-size: 14px;
+  outline: none;
+  color: var(--text);
+}
+
+.search-input::placeholder { color: var(--text-muted); }
+
+.contact-list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.contact-item:active { background: var(--surface-2); }
+
+.contact-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, oklch(0.65 0.18 260), oklch(0.60 0.16 290));
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.contact-info { flex: 1; min-width: 0; }
+.contact-name { font-size: 15px; font-weight: 600; }
+.contact-preview {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.contact-badge {
+  min-width: 20px; height: 20px;
+  background: var(--danger);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 6px;
+}
+
+.empty-contacts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  text-align: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.panel-actions .btn {
+  flex: 1;
+  height: 40px;
+  font-size: 13px;
+}
+
+/* ========= CHAT VIEW ========= */
+.chat-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .messages-area {
   flex: 1;
   overflow-y: auto;
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  scroll-behavior: smooth;
+  gap: 6px;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
 
-.messages-area::-webkit-scrollbar { width: 0; }
-
-/* Time divider */
 .time-divider {
   text-align: center;
-  padding: 8px 0;
   font-size: 11px;
-  color: var(--text-secondary);
-  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 8px 0;
 }
 
-/* Message bubble */
 .message-row {
   display: flex;
   flex-direction: column;
-  max-width: 78%;
-  animation: msgIn 0.3s ease-out;
+  max-width: 75%;
+  animation: msgIn 0.25s ease-out;
 }
 
 @keyframes msgIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -194,291 +341,622 @@ body {
 .message-row.other { align-self: flex-start; }
 
 .bubble {
-  padding: 10px 14px;
+  padding: 9px 14px;
   border-radius: var(--radius-md);
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.5;
   word-break: break-word;
-  position: relative;
 }
 
 .message-row.self .bubble {
   background: var(--bubble-self);
-  color: var(--text-light);
+  color: white;
   border-bottom-right-radius: 4px;
-  box-shadow: var(--shadow-sm);
 }
 
 .message-row.other .bubble {
   background: var(--bubble-other);
-  color: var(--text-primary);
+  color: var(--text);
   border-bottom-left-radius: 4px;
   box-shadow: var(--shadow-sm);
 }
 
 .message-time {
   font-size: 10px;
-  color: var(--text-secondary);
-  margin-top: 3px;
+  color: var(--text-muted);
+  margin-top: 2px;
   padding: 0 4px;
 }
 
 .message-row.self .message-time { text-align: right; }
 
-/* Typing indicator */
-.typing-indicator {
-  align-self: flex-start;
+.chat-input-area {
+  background: var(--surface);
+  padding: 8px 12px calc(8px + var(--safe-bottom));
   display: flex;
-  gap: 4px;
-  padding: 10px 14px;
-  background: var(--bubble-other);
-  border-radius: var(--radius-md);
-  border-bottom-left-radius: 4px;
-  box-shadow: var(--shadow-sm);
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  align-items: flex-end;
 }
 
-.typing-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: oklch(0.75 0.03 260);
-  animation: typingBounce 1.4s ease-in-out infinite;
-}
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typingBounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30% { transform: translateY(-6px); opacity: 1; }
-}
-
-/* Empty state */
-.empty-state {
+.chat-input-area textarea {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: var(--text-secondary);
+  border: none;
+  background: var(--surface-2);
+  border-radius: var(--radius-lg);
+  padding: 9px 14px;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.4;
+  outline: none;
+  resize: none;
+  max-height: 100px;
+  min-height: 20px;
+  height: 20px;
+  color: var(--text);
 }
 
-.empty-icon {
-  font-size: 56px;
+.chat-input-area textarea::placeholder { color: var(--text-muted); }
+
+.chat-input-area textarea:focus {
+  box-shadow: 0 0 0 2px oklch(0.68 0.16 160 / 0.3);
+}
+
+.send-btn {
+  width: 38px; height: 38px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.12s, opacity 0.12s;
   opacity: 0.4;
 }
 
-.empty-text {
-  font-size: 14px;
-  text-align: center;
-  line-height: 1.6;
+.send-btn:not(:disabled) { opacity: 1; }
+.send-btn:not(:disabled):active { transform: scale(0.9); }
+
+/* ========= MODAL ========= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: oklch(0 0 0 / 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.2s;
 }
 
-/* Input area */
-.input-area {
+@keyframes fadeIn { from { opacity: 0; } }
+
+.modal-sheet {
+  width: 100%;
+  max-width: 480px;
   background: var(--surface);
-  padding: 10px 12px calc(10px + var(--safe-bottom));
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px calc(20px + var(--safe-bottom));
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp { from { transform: translateY(100%); } }
+
+.modal-sheet h3 {
+  font-size: 17px;
+  font-weight: 650;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.modal-sheet .input-group { margin-bottom: 16px; }
+
+.modal-sheet .modal-actions {
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  border-top: 1px solid var(--border);
-  position: relative;
-  z-index: 10;
+  gap: 10px;
 }
 
-.input-tools {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.input-wrapper {
-  flex: 1;
-  background: var(--bg);
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: flex-end;
-  padding: 2px 4px;
-  transition: box-shadow 0.2s;
-}
-
-.input-wrapper:focus-within {
-  box-shadow: 0 0 0 2px oklch(0.68 0.16 160 / 0.4);
-}
-
-.input-wrapper textarea {
-  flex: 1;
-  border: none;
-  background: none;
-  outline: none;
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--text-primary);
-  resize: none;
-  padding: 8px 10px;
-  max-height: 120px;
-  min-height: 20px;
-  height: 20px;
-  overflow-y: auto;
-}
-
-.input-wrapper textarea::placeholder {
-  color: var(--text-secondary);
-}
-
-.input-wrapper textarea::-webkit-scrollbar { width: 0; }
-
-.send-btn {
-  width: 38px;
-  height: 38px;
-  border: none;
-  background: var(--bubble-self);
-  color: white;
-  border-radius: 50%;
-  cursor: pointer;
+/* Loading */
+.loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  transition: transform 0.15s, opacity 0.15s;
-  flex-shrink: 0;
-  opacity: 0.5;
+  padding: 40px;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
-.send-btn:not(:disabled) {
-  opacity: 1;
+.spinner {
+  width: 24px; height: 24px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 10px;
 }
 
-.send-btn:not(:disabled):active {
-  transform: scale(0.92);
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* System message */
-.system-msg {
-  text-align: center;
-  font-size: 11px;
-  color: var(--text-secondary);
-  padding: 6px 0;
-}
+.hidden { display: none !important; }
 
-/* Responsive adjustments for very small screens */
 @media (max-width: 360px) {
-  .message-row { max-width: 85%; }
+  .message-row { max-width: 82%; }
   .bubble { font-size: 14px; padding: 8px 12px; }
-  .input-area { padding: 8px 10px calc(8px + var(--safe-bottom)); gap: 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .message-row { animation: none; }
-  .typing-dot { animation: none; opacity: 0.4; }
+  .modal-sheet { animation: none; }
 }
 </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="app-container" id="app">
 
-  <!-- Header -->
-  <header class="chat-header">
-    <button class="back-btn" aria-label="返回">&larr;</button>
-    <div class="avatar">🤖</div>
-    <div class="header-info">
-      <div class="header-name">智能助手</div>
-      <div class="header-status">在线</div>
+  <!-- ===== AUTH VIEW ===== -->
+  <div id="authView" class="auth-view">
+    <div class="logo">💬</div>
+    <h2>Chat Hub</h2>
+    <p>真人实时聊天，邀请好友一起聊</p>
+    <div class="input-group">
+      <input type="text" id="authUsername" placeholder="用户名（注册后不可改）" maxlength="20">
+      <input type="password" id="authPassword" placeholder="密码（至少6位）" maxlength="50">
     </div>
-    <div class="header-actions">
-      <button class="icon-btn" aria-label="更多" title="清空对话" id="clearBtn">&#8942;</button>
-    </div>
-  </header>
+    <p class="auth-error" id="authError"></p>
+    <button class="btn btn-primary" id="btnLogin">登录</button>
+    <button class="btn btn-outline" id="btnRegister">注册新账号</button>
+  </div>
 
-  <!-- Messages -->
-  <main class="messages-area" id="messagesArea">
-    <div class="time-divider" id="dateLabel"></div>
-    <div class="empty-state" id="emptyState">
-      <div class="empty-icon">💬</div>
-      <div class="empty-text">开始聊天吧<br>发送一条消息试试</div>
+  <!-- ===== CONTACTS VIEW ===== -->
+  <div id="contactsView" class="contacts-view hidden">
+    <div class="header">
+      <div class="avatar-sm" id="myAvatar"></div>
+      <div class="header-info">
+        <div class="header-name" id="myName"></div>
+        <div class="header-status">在线</div>
+      </div>
+      <button class="btn btn-outline" style="width:auto;height:32px;font-size:12px;padding:0 12px;" id="btnLogout">退出</button>
     </div>
-  </main>
+    <div id="contactList" class="contact-list">
+      <div class="loading"><div class="spinner"></div>加载中...</div>
+    </div>
+    <div class="panel-actions">
+      <button class="btn btn-primary" id="btnAddFriend">添加好友</button>
+    </div>
+  </div>
 
-  <!-- Input -->
-  <footer class="input-area">
-    <div class="input-wrapper">
-      <textarea id="msgInput" rows="1" placeholder="输入消息..." maxlength="1000" autofocus></textarea>
+  <!-- ===== CHAT VIEW ===== -->
+  <div id="chatView" class="chat-view hidden">
+    <div class="header">
+      <button class="back-btn" id="btnBack">&larr;</button>
+      <div class="avatar-sm" id="chatAvatar"></div>
+      <div class="header-info">
+        <div class="header-name" id="chatName"></div>
+        <div class="header-status" id="chatStatus">在线</div>
+      </div>
     </div>
-    <button class="send-btn" id="sendBtn" disabled aria-label="发送">&#10148;</button>
-  </footer>
+    <div id="messagesArea" class="messages-area"></div>
+    <div class="chat-input-area">
+      <textarea id="chatInput" rows="1" placeholder="输入消息..." maxlength="1000"></textarea>
+      <button class="send-btn" id="chatSendBtn" disabled>&#10148;</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL ===== -->
+  <div id="modalOverlay" class="modal-overlay hidden">
+    <div class="modal-sheet">
+      <h3 id="modalTitle">添加好友</h3>
+      <div class="input-group">
+        <input type="text" id="modalInput" placeholder="输入对方用户名">
+      </div>
+      <p class="auth-error" id="modalError"></p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="btnModalCancel">取消</button>
+        <button class="btn btn-primary" id="btnModalConfirm">确认</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ============================================================
+// SUPABASE CONFIG - Replace with your own Supabase project URL and anon key
+// 1. Go to https://supabase.com → New Project
+// 2. Copy URL and anon key from Settings → API
+// 3. Go to SQL Editor and run the setup SQL below:
+// ============================================================
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+// ---- SQL to run in Supabase SQL Editor ----
+/*
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Profiles table
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  username TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Friends table (bidirectional friendship)
+CREATE TABLE friendships (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  friend_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, friend_id)
+);
+
+-- Messages table
+CREATE TABLE messages (
+  id BIGSERIAL PRIMARY KEY,
+  sender_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  receiver_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Index for message queries
+CREATE INDEX idx_messages_conversation ON messages(
+  LEAST(sender_id, receiver_id),
+  GREATEST(sender_id, receiver_id),
+  created_at DESC
+);
+
+-- Enable Realtime for messages
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+
+-- Enable Row Level Security
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE friendships ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies
+CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can view their friendships" ON friendships FOR SELECT
+  USING (auth.uid() = user_id OR auth.uid() = friend_id);
+CREATE POLICY "Users can create friendships" ON friendships FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their messages" ON messages FOR SELECT
+  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+CREATE POLICY "Users can insert their messages" ON messages FOR INSERT
+  WITH CHECK (auth.uid() = sender_id);
+*/
+// ============================================================
+
 (function() {
-  const messagesArea = document.getElementById('messagesArea');
-  const msgInput = document.getElementById('msgInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const emptyState = document.getElementById('emptyState');
-  const dateLabel = document.getElementById('dateLabel');
-  const clearBtn = document.getElementById('clearBtn');
+  // DOM refs
+  const app = document.getElementById('app');
+  const authView = document.getElementById('authView');
+  const contactsView = document.getElementById('contactsView');
+  const chatView = document.getElementById('chatView');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalInput = document.getElementById('modalInput');
+  const modalError = document.getElementById('modalError');
 
-  const STORAGE_KEY = 'chat_messages';
-  const AUTO_REPLY_DELAY = [800, 1500, 2200];
+  let supabase = null;
+  let currentUser = null;
+  let profile = null;
+  let friends = [];
+  let currentChat = null;
+  let messageSubscription = null;
+  let presenceSubscription = null;
 
-  const autoReplies = [
-    '你好呀！有什么可以帮你的吗？',
-    '这个想法很有意思！',
-    '让我想想……嗯，我觉得可以试试看。',
-    '哈哈，确实如此！',
-    '稍等，我正在处理你的问题~',
-    '好的，我明白了！',
-    '还有其他问题吗？我随时在线。',
-    '你说得对，我完全同意。',
-    '这是个好问题，我的建议是先理清思路再动手。',
-    '没问题，交给我吧！',
-    '收到了，我会记住的。',
-    '有道理，学到了新东西！'
-  ];
+  const needConfig = SUPABASE_URL === 'YOUR_SUPABASE_URL';
 
-  let isTyping = false;
-  let messages = [];
+  // ==================== INIT ====================
+  if (needConfig) {
+    authView.innerHTML = `
+      <div class="logo">⚙️</div>
+      <h2>需要配置 Supabase</h2>
+      <p style="text-align:left;font-size:13px;line-height:1.8;">
+        1. 前往 <a href="https://supabase.com" target="_blank" style="color:var(--accent);">supabase.com</a> 注册并创建项目<br>
+        2. 打开此文件，找到顶部 <code>SUPABASE_URL</code> 和 <code>SUPABASE_KEY</code><br>
+        3. 替换为你的 Supabase 项目 URL 和 anon key<br>
+        4. 在 Supabase SQL Editor 中运行文件中的建表 SQL<br>
+        5. 重新部署即可
+      </p>`;
+    return;
+  }
 
-  // Load messages
-  function loadMessages() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        messages = JSON.parse(raw);
-        // Handle old format
-        if (!Array.isArray(messages)) messages = [];
-      }
-    } catch (e) {
-      messages = [];
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ==================== AUTH ====================
+  document.getElementById('btnLogin').addEventListener('click', async () => {
+    const username = document.getElementById('authUsername').value.trim();
+    const password = document.getElementById('authPassword').value;
+    if (!username || password.length < 6) {
+      setAuthError('请输入用户名和密码（密码至少6位）');
+      return;
     }
+    setAuthError('');
+    const email = `${username}@chathub.local`;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setAuthError('用户名或密码错误，或该账号不存在');
+    } else {
+      await initApp();
+    }
+  });
+
+  document.getElementById('btnRegister').addEventListener('click', async () => {
+    const username = document.getElementById('authUsername').value.trim();
+    const password = document.getElementById('authPassword').value;
+    if (!username || password.length < 6) {
+      setAuthError('请输入用户名和密码（密码至少6位）');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_\u4e00-\u9fff]{2,20}$/.test(username)) {
+      setAuthError('用户名2-20位，限中英文、数字、下划线');
+      return;
+    }
+    setAuthError('');
+    const email = `${username}@chathub.local`;
+
+    // Sign up
+    const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+    if (authError) { setAuthError(authError.message); return; }
+    if (!authData.user) { setAuthError('注册失败，请重试'); return; }
+
+    // Create profile
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: authData.user.id,
+      username: username
+    });
+    if (profileError) {
+      // Cleanup: sign out if profile creation fails
+      await supabase.auth.signOut();
+      if (profileError.message.includes('duplicate')) {
+        setAuthError('该用户名已被占用');
+      } else {
+        setAuthError('创建用户资料失败：' + profileError.message);
+      }
+      return;
+    }
+
+    await initApp();
+  });
+
+  function setAuthError(msg) {
+    document.getElementById('authError').textContent = msg;
   }
 
-  function saveMessages() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    } catch (e) {}
+  // ==================== APP INIT ====================
+  async function initApp() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      showAuth();
+      return;
+    }
+    currentUser = user;
+
+    // Get profile
+    const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    if (!prof) {
+      await supabase.auth.signOut();
+      showAuth();
+      return;
+    }
+    profile = prof;
+
+    showContacts();
+    await loadFriends();
+    await setupRealtime();
   }
 
-  function formatTime(date) {
-    const h = date.getHours().toString().padStart(2, '0');
-    const m = date.getMinutes().toString().padStart(2, '0');
-    return `${h}:${m}`;
+  // ==================== VIEW SWITCHING ====================
+  function showAuth() {
+    authView.classList.remove('hidden');
+    contactsView.classList.add('hidden');
+    chatView.classList.add('hidden');
   }
 
-  function formatDate(date) {
+  function showContacts() {
+    authView.classList.add('hidden');
+    contactsView.classList.remove('hidden');
+    chatView.classList.add('hidden');
+    document.getElementById('myName').textContent = profile.username;
+    document.getElementById('myAvatar').textContent = profile.username.charAt(0).toUpperCase();
+  }
+
+  function showChat(friend) {
+    currentChat = friend;
+    contactsView.classList.add('hidden');
+    chatView.classList.remove('hidden');
+    document.getElementById('chatName').textContent = friend.username;
+    document.getElementById('chatAvatar').textContent = friend.username.charAt(0).toUpperCase();
+    document.getElementById('messagesArea').innerHTML = '';
+    document.getElementById('chatInput').value = '';
+    document.getElementById('chatSendBtn').disabled = true;
+    loadMessages();
+    subscribeMessages();
+  }
+
+  function showModal(title, placeholder, onConfirm) {
+    modalOverlay.classList.remove('hidden');
+    modalTitle.textContent = title;
+    modalInput.value = '';
+    modalInput.placeholder = placeholder;
+    modalError.textContent = '';
+    modalInput.focus();
+
+    const confirmBtn = document.getElementById('btnModalConfirm');
+    const cancelBtn = document.getElementById('btnModalCancel');
+
+    const cleanup = () => {
+      modalOverlay.classList.add('hidden');
+      confirmBtn.removeEventListener('click', handler);
+      cancelBtn.removeEventListener('click', cleanup);
+    };
+
+    const handler = async () => {
+      await onConfirm(modalInput.value.trim());
+    };
+
+    confirmBtn.addEventListener('click', handler);
+    cancelBtn.addEventListener('click', cleanup);
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) cleanup();
+    });
+  }
+
+  // ==================== FRIENDS ====================
+  async function loadFriends() {
+    if (!currentUser) return;
+
+    const { data: rows, error } = await supabase
+      .from('friendships')
+      .select('id, user_id, friend_id, friend:friend_id(id, username), user:user_id(id, username)')
+      .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`);
+
+    if (error) { console.error(error); return; }
+
+    friends = rows.map(r => {
+      if (r.user_id === currentUser.id) return { friendship_id: r.id, ...r.friend };
+      return { friendship_id: r.id, ...r.user };
+    });
+
+    renderContactList();
+  }
+
+  function renderContactList() {
+    const container = document.getElementById('contactList');
+    if (friends.length === 0) {
+      container.innerHTML = `
+        <div class="empty-contacts">
+          <div style="font-size:40px;">👋</div>
+          <div>暂无好友</div>
+          <div style="font-size:12px;">点击下方「添加好友」开始聊天</div>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = friends.map(f => `
+      <div class="contact-item" data-id="${f.id}">
+        <div class="contact-avatar">${(f.username || '?').charAt(0).toUpperCase()}</div>
+        <div class="contact-info">
+          <div class="contact-name">${f.username || 'Unknown'}</div>
+          <div class="contact-preview">点击开始聊天</div>
+        </div>
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.contact-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const friend = friends.find(f => f.id === el.dataset.id);
+        if (friend) showChat(friend);
+      });
+    });
+  }
+
+  // ==================== ADD FRIEND ====================
+  document.getElementById('btnAddFriend').addEventListener('click', () => {
+    showModal('添加好友', '输入对方的用户名', async (username) => {
+      if (!username) { modalError.textContent = '请输入用户名'; return; }
+      if (username === profile.username) { modalError.textContent = '不能添加自己为好友'; return; }
+
+      const { data: target, error } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .eq('username', username)
+        .maybeSingle();
+
+      if (error || !target) {
+        modalError.textContent = '找不到该用户';
+        return;
+      }
+
+      // Check if already friends
+      const exists = friends.find(f => f.id === target.id);
+      if (exists) {
+        modalError.textContent = '你们已经是好友了';
+        return;
+      }
+
+      const { error: insertErr } = await supabase.from('friendships').insert({
+        user_id: currentUser.id,
+        friend_id: target.id
+      });
+
+      if (insertErr) {
+        modalError.textContent = '添加失败：' + insertErr.message;
+        return;
+      }
+
+      modalOverlay.classList.add('hidden');
+      await loadFriends();
+    });
+  });
+
+  // ==================== MESSAGES ====================
+  async function loadMessages() {
+    if (!currentChat) return;
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentChat.id}),and(sender_id.eq.${currentChat.id},receiver_id.eq.${currentUser.id})`)
+      .order('created_at', { ascending: true })
+      .limit(100);
+
+    if (error) return;
+    renderMessages(data || []);
+  }
+
+  function renderMessages(msgs) {
+    const area = document.getElementById('messagesArea');
+    area.innerHTML = '';
+
+    let lastDate = '';
+    msgs.forEach(msg => {
+      const date = new Date(msg.created_at);
+      const dateStr = formatDate(date);
+      if (dateStr !== lastDate) {
+        area.appendChild(createDivider(dateStr));
+        lastDate = dateStr;
+      }
+
+      const isSelf = msg.sender_id === currentUser.id;
+      const row = document.createElement('div');
+      row.className = `message-row ${isSelf ? 'self' : 'other'}`;
+      row.innerHTML = `
+        <div class="bubble">${escapeHtml(msg.content)}</div>
+        <div class="message-time">${formatTime(date)}</div>`;
+      area.appendChild(row);
+    });
+
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function createDivider(text) {
+    const d = document.createElement('div');
+    d.className = 'time-divider';
+    d.textContent = text;
+    return d;
+  }
+
+  function formatTime(d) {
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  function formatDate(d) {
     const now = new Date();
-    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const diff = today - d;
-
+    const that = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diff = (today - that) / 86400000;
     if (diff === 0) return '今天';
-    if (diff === 86400000) return '昨天';
-    const y = date.getFullYear();
-    const mo = (date.getMonth() + 1).toString().padStart(2, '0');
-    const da = date.getDate().toString().padStart(2, '0');
-    return `${y}年${mo}月${da}日`;
+    if (diff === 1) return '昨天';
+    return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
   }
 
   function escapeHtml(str) {
@@ -487,167 +965,112 @@ body {
     return div.innerHTML;
   }
 
-  function autoResize() {
-    msgInput.style.height = '20px';
-    msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
-  }
+  async function sendMessage() {
+    if (!currentChat) return;
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
 
-  function updateSendBtn() {
-    const hasText = msgInput.value.trim().length > 0;
-    sendBtn.disabled = !hasText;
-  }
-
-  function updateEmptyState() {
-    if (messages.length === 0) {
-      emptyState.style.display = 'flex';
-    } else {
-      emptyState.style.display = 'none';
-    }
-  }
-
-  function shouldShowDateDivider(prevMsg, currMsg) {
-    if (!prevMsg) return true;
-    const prevDate = new Date(prevMsg.timestamp);
-    const currDate = new Date(currMsg.timestamp);
-    return prevDate.toDateString() !== currDate.toDateString();
-  }
-
-  function renderMessages() {
-    messagesArea.innerHTML = '';
-    messagesArea.appendChild(dateLabel);
-
-    let lastDateDivider = dateLabel;
-    let hasContent = false;
-
-    messages.forEach((msg, i) => {
-      const prevMsg = i > 0 ? messages[i - 1] : null;
-
-      if (shouldShowDateDivider(prevMsg, msg)) {
-        const divider = document.createElement('div');
-        divider.className = 'time-divider';
-        divider.textContent = formatDate(new Date(msg.timestamp));
-        messagesArea.appendChild(divider);
-        lastDateDivider = divider;
-      }
-
-      const row = document.createElement('div');
-      row.className = `message-row ${msg.isSelf ? 'self' : 'other'}`;
-
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble';
-      bubble.innerHTML = escapeHtml(msg.text);
-
-      const time = document.createElement('div');
-      time.className = 'message-time';
-      time.textContent = formatTime(new Date(msg.timestamp));
-
-      row.appendChild(bubble);
-      row.appendChild(time);
-      messagesArea.appendChild(row);
-      hasContent = true;
+    const { error } = await supabase.from('messages').insert({
+      sender_id: currentUser.id,
+      receiver_id: currentChat.id,
+      content: text
     });
 
-    // Keep empty state as last child
-    messagesArea.appendChild(emptyState);
-    updateEmptyState();
+    if (error) { console.error(error); return; }
 
-    // Scroll to bottom
-    requestAnimationFrame(() => {
-      messagesArea.scrollTop = messagesArea.scrollHeight;
-    });
+    input.value = '';
+    input.style.height = '20px';
+    document.getElementById('chatSendBtn').disabled = true;
   }
 
-  function addMessage(text, isSelf) {
-    messages.push({
-      text: text,
-      isSelf: isSelf,
-      timestamp: new Date().toISOString()
-    });
-    saveMessages();
-    renderMessages();
+  function subscribeMessages() {
+    if (messageSubscription) supabase.removeChannel(messageSubscription);
+
+    const channel = supabase
+      .channel(`chat-${[currentUser.id, currentChat.id].sort().join('-')}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `sender_id=in.(${currentUser.id},${currentChat.id})`
+      }, async () => {
+        await loadMessages();
+      })
+      .subscribe();
+
+    messageSubscription = channel;
   }
 
-  function showTyping() {
-    if (isTyping) return;
-    isTyping = true;
+  // ==================== REALTIME ====================
+  async function setupRealtime() {
+    // Listen for new friend messages globally
+    if (presenceSubscription) supabase.removeChannel(presenceSubscription);
 
-    const indicator = document.createElement('div');
-    indicator.className = 'typing-indicator';
-    indicator.id = 'typingIndicator';
-    indicator.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-    messagesArea.insertBefore(indicator, emptyState);
-    messagesArea.scrollTop = messagesArea.scrollHeight;
+    // We'll subscribe to new messages from any friend for badge updates
+    const { data: friendIds } = await supabase
+      .from('friendships')
+      .select('friend_id, user_id')
+      .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`);
+
+    if (!friendIds) return;
+    const ids = friendIds.map(f => f.user_id === currentUser.id ? f.friend_id : f.user_id);
+
+    if (ids.length === 0) return;
+
+    // Monitor incoming messages while in contacts view
+    supabase
+      .channel('global-messages')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `receiver_id=eq.${currentUser.id}`
+      }, (payload) => {
+        // Only if not in chat with this person
+        if (currentChat && currentChat.id === payload.new.sender_id) return;
+        // Could add badge to contact list here
+      })
+      .subscribe();
   }
 
-  function hideTyping() {
-    isTyping = false;
-    const indicator = document.getElementById('typingIndicator');
-    if (indicator) indicator.remove();
-  }
-
-  function getAutoReply() {
-    return autoReplies[Math.floor(Math.random() * autoReplies.length)];
-  }
-
-  function triggerAutoReply() {
-    showTyping();
-    const delay = AUTO_REPLY_DELAY[Math.floor(Math.random() * AUTO_REPLY_DELAY.length)];
-
-    setTimeout(() => {
-      hideTyping();
-      addMessage(getAutoReply(), false);
-    }, delay);
-  }
-
-  function sendMessage() {
-    const text = msgInput.value.trim();
-    if (!text || isTyping) return;
-
-    addMessage(text, true);
-    msgInput.value = '';
-    msgInput.style.height = '20px';
-    updateSendBtn();
-    msgInput.focus();
-
-    triggerAutoReply();
-  }
-
-  function clearChat() {
-    if (messages.length === 0) return;
-    if (confirm('确定要清空所有聊天记录吗？')) {
-      messages = [];
-      saveMessages();
-      renderMessages();
-    }
-  }
-
-  // Event listeners
-  msgInput.addEventListener('input', () => {
-    autoResize();
-    updateSendBtn();
+  // ==================== EVENT HANDLERS ====================
+  document.getElementById('btnBack').addEventListener('click', () => {
+    currentChat = null;
+    if (messageSubscription) { supabase.removeChannel(messageSubscription); messageSubscription = null; }
+    showContacts();
   });
 
-  msgInput.addEventListener('keydown', (e) => {
+  document.getElementById('btnLogout').addEventListener('click', async () => {
+    if (messageSubscription) supabase.removeChannel(messageSubscription);
+    await supabase.auth.signOut();
+    currentUser = null;
+    profile = null;
+    friends = [];
+    currentChat = null;
+    showAuth();
+  });
+
+  const chatInput = document.getElementById('chatInput');
+  const chatSendBtn = document.getElementById('chatSendBtn');
+
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = '20px';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + 'px';
+    chatSendBtn.disabled = chatInput.value.trim().length === 0;
+  });
+
+  chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
 
-  sendBtn.addEventListener('click', sendMessage);
-  clearBtn.addEventListener('click', clearChat);
+  chatSendBtn.addEventListener('click', sendMessage);
 
-  // Init
-  loadMessages();
-
-  // Update date label
-  const today = new Date();
-  dateLabel.textContent = formatDate(today);
-
-  renderMessages();
-
-  // Focus input on load
-  setTimeout(() => msgInput.focus(), 300);
+  // ==================== STARTUP ====================
+  initApp();
 })();
 </script>
 </body>
