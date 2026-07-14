@@ -201,7 +201,8 @@
             width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
             justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0;
         }
-        .modal-uploader .mu-name { font-size: 0.85rem; color: #ddd; }
+        .modal-uploader .mu-name { font-size: 0.85rem; color: #ddd; cursor: pointer; text-decoration: none; }
+        .modal-uploader .mu-name:hover { color: #667eea; text-decoration: underline; }
         .modal-info { padding: 1.5rem; }
         .modal-title { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem; }
         .modal-desc { color: #8888aa; margin-bottom: 0.75rem; line-height: 1.5; }
@@ -366,7 +367,7 @@
                 <video id="modalPlayer" controls></video>
                 <div class="modal-uploader" id="modalUploader" style="display:none;">
                     <div class="mu-avatar" id="muAvatar"></div>
-                    <span class="mu-name" id="muName"></span>
+                    <a class="mu-name" id="muName" target="_blank"></a>
                 </div>
             </div>
             <div class="modal-info">
@@ -563,7 +564,9 @@
             document.getElementById('modalMeta').textContent=formatSize(v.size)+' · '+
                 new Date(v.uploadDate).toLocaleString('zh-CN')+' · 上传者: '+(v.uploaded_by||'管理员');
             var uName=v.uploaded_by||'管理员';
-            document.getElementById('muName').textContent=uName;
+            var muNameEl=document.getElementById('muName');
+            muNameEl.textContent=uName;
+            muNameEl.href='my.html?user='+encodeURIComponent(uName);
             var av=document.getElementById('muAvatar');
             av.style.background=avatarColor(uName);
             av.textContent=uName.charAt(0).toUpperCase();

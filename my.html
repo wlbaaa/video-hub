@@ -271,6 +271,53 @@ function formatDate(isoStr){if(!isoStr)return'';const d=new Date(isoStr);return 
 function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(function(){t.classList.remove('show')},2500)}
 
+// ────── URL param: ?user=xxx (view other user's profile) ──────
+(function checkUrlParam(){
+    const params=new URLSearchParams(window.location.search);
+    const targetUser=params.get('user');
+    if(!targetUser)return;
+    // Mark as viewing other user's page
+    window._viewingUser=targetUser;
+    document.getElementById('btnAccount').style.display='none';
+    document.getElementById('profileSection').style.display='block';
+    document.getElementById('profileAvatar').textContent=targetUser[0].toUpperCase();
+    document.getElementById('profileAvatar').style.background=avatarColor(targetUser);
+    document.getElementById('profileName').textContent=targetUser;
+    document.getElementById('emptyState').style.display='none';
+    // Load videos for this user
+    (async function(){
+        await loadAllVideos();
+        const vids=allVideos.filter(v=>(v.uploaded_by||'管理员')===targetUser);
+        document.getElementById('profileCount').textContent=vids.length+' 个作品';
+        const grid=document.getElementById('videoGrid');
+        if(vids.length===0){
+            document.getElementById('emptyState').style.display='block';
+            document.getElementById('emptyTitle').textContent='暂无作品';
+            document.getElementById('emptyDesc').textContent='该用户还没有发布视频';
+            document.getElementById('emptyLoginBtn').style.display='none';
+            return;
+        }
+        grid.innerHTML=vids.map(v=>{
+            const videoUrl='https://raw.githubusercontent.com/'+config.user+'/'+config.repo+'/main/'+v.path;
+            const dateStr=formatDate(v.created_at||v.uploadDate);
+            return `
+            <div class="video-card" onclick="playVideo('${v.id}')">
+                <div class="video-thumb">
+                    <video src="${videoUrl}#t=1" muted preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>
+                    <div class="play-icon">▶</div>
+                </div>
+                <div class="video-info">
+                    <div class="video-title">${escapeHtml(v.title)}</div>
+                    <div class="video-meta">
+                        <span>${formatSize(v.size||0)}</span>
+                        <span>${dateStr}</span>
+                    </div>
+                </div>
+            </div>
+        `}).join('');
+    })();
+})();
+
 // ────── Auto Login ──────
 (async function autoLogin(){
     const saved=localStorage.getItem('vh_subadmin');
@@ -293,3 +340,4 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 </script>
 </body>
 </html>
+
